@@ -1,0 +1,27 @@
+# Binaries and executables
+bin/
+*.exe
+*.o
+*.obj
+
+# Nim cache
+nimcache/
+*.nimcache/
+
+# Environment secrets
+.env
+.env.local
+*.env
+
+# SQLite and runtime databases
+*.db
+*.db-wal
+*.db-shm
+memory.json
+
+# Logs & temp files
+*.log
+tmp/
+scratch/
+.DS_Store
+Thumbs.db
