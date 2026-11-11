@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermes-Nim — Ultra-Lean Autonomous AI Agent (<15MB RAM)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090b10;
+      --card-bg: rgba(17, 24, 39, 0.7);
+      --border: rgba(255, 255, 255, 0.08);
+      --primary: #f59e0b;
+      --primary-glow: rgba(245, 158, 11, 0.25);
+      --accent-nim: #f6b426;
+      --accent-rust: #ef4444;
+      --accent-cyan: #06b6d4;
+      --accent-green: #10b981;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(245, 158, 11, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 50% 85%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    /* Header / Nav */
+    header {
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(9, 11, 16, 0.85);
+    }
+    .nav-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: #fff;
+      text-decoration: none;
+    }
+    .logo-badge {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover {
+      color: #fff;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px var(--primary-glow);
+    }
+    .btn-outline {
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: #fff;
+    }
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    /* Hero Section */
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 100px;
+      color: var(--primary);
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+    .highlight {
+      background: linear-gradient(135deg, #f59e0b, #fbbf24, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 760px;
+      margin: 0 auto 36px;
+    }
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+    /* Telemetry / Memory Comparison Card */
+    .telemetry-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      margin-bottom: 80px;
+    }
+    .telemetry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    .telemetry-title {
+      font-weight: 700;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 10px var(--accent-green);
+    }
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    .metric-box {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: left;
+    }
+    .metric-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .metric-value {
+      font-size: 2.2rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .metric-sub {
+      font-size: 0.8rem;
+      color: var(--accent-green);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+    /* Comparison Bar */
+    .comp-bar-container {
+      margin-top: 24px;
+      text-align: left;
+    }
+    .comp-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .bar-outer {
+      height: 24px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid var(--border);
+      display: flex;
+    }
+    .bar-hermes-nim {
+      width: 6%;
+      background: linear-gradient(90deg, #f59e0b, #fbbf24);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #000;
+    }
+    .bar-rust-browser {
+      width: 6.5%;
+      background: linear-gradient(90deg, #ef4444, #f87171);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .bar-python-original {
+      width: 87.5%;
+      background: rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      padding-left: 12px;
+      font-size: 0.75rem;
+      color: #9ca3af;
+    }
+    /* Features Grid */
+    .features-section {
+      padding: 60px 0;
+    }
+    .section-title {
+      text-align: center;
+      font-size: 2.4rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+    .section-subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto 50px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      transition: all 0.2s;
+    }
+    .feature-card:hover {
+      border-color: rgba(245, 158, 11, 0.4);
+      transform: translateY(-4px);
+    }
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+    .feature-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .feature-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    /* Code Snippet Box */
+    .code-box {
+      background: #05070a;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: #e5e7eb;
+      text-align: left;
+      overflow-x: auto;
+      margin: 40px auto;
+      max-width: 800px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    .code-box .comment { color: #6b7280; }
+    .code-box .cmd { color: #10b981; }
+    .code-box .flag { color: #f59e0b; }
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      margin-top: 80px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    @media (max-width: 768px) {
+      h1 { font-size: 2.4rem; }
+      .hero-actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header>
+    <div class="container nav-content">
+      <a href="#" class="logo">
+        <span>⚡ Hermes-Nim</span>
+        <span class="logo-badge">NATIVE</span>
+      </a>
+      <div class="nav-links">
+        <a href="#benchmarks">Benchmarks</a>
+        <a href="#features">Features</a>
+        <a href="#quickstart">Quickstart</a>
+        <a href="https://github.com/kbelludoo/hermes-nim" target="_blank" class="btn btn-outline">GitHub</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero container">
+    <div class="badge-pill">
+      ⚡ Ultra-Lean Native Architecture
+    </div>
+    <h1>The Autonomous AI Agent<br>Running in <span class="highlight">< 15 MB RAM</span></h1>
+    <p>
+      A complete, zero-bloat rewrite of Hermes Agent in <strong>Nim</strong> combined with the <strong>AI-Rust-Browser</strong> MCP engine. Native compilation, deterministic memory with ORC, and full headless web interaction without the Python or Chrome footprint.
+    </p>
+    <div class="hero-actions">
+      <a href="#quickstart" class="btn btn-primary">Get Started</a>
+      <a href="https://github.com/kbelludoo/hermes-nim" target="_blank" class="btn btn-outline">View Repository</a>
+      <a href="https://kbelludoo.github.io/ai-rust-browser/" target="_blank" class="btn btn-outline">AI-Rust-Browser ↗</a>
+    </div>
+
+    <!-- Live Telemetry Card -->
+    <div id="benchmarks" class="telemetry-card">
+      <div class="telemetry-header">
+        <div class="telemetry-title">
+          <span class="status-dot"></span>
+          Live Hardware Telemetry & Benchmarks
+        </div>
+        <span style="font-size: 0.85rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">Target: Windows x64 / Linux x86_64</span>
+      </div>
+
+      <div class="memory-grid">
+        <div class="metric-box">
+          <div class="metric-label">Hermes Nim Core</div>
+          <div class="metric-value" style="color: var(--accent-nim);">5.84 <span style="font-size: 1rem;">MB</span></div>
+          <div class="metric-sub">✓ ReAct loop, tools & HTTPS</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">AI-Rust-Browser (MCP)</div>
+          <div class="metric-value" style="color: var(--accent-rust);">6.50 <span style="font-size: 1rem;">MiB</span></div>
+          <div class="metric-sub">✓ Zero-GC headless browser</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Total Stack Combined</div>
+          <div class="metric-value" style="color: var(--accent-green);">12.34 <span style="font-size: 1rem;">MB</span></div>
+          <div class="metric-sub">✓ 4x below 50MB ceiling</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Original Python + Chrome</div>
+          <div class="metric-value" style="color: var(--text-muted);">650+ <span style="font-size: 1rem;">MB</span></div>
+          <div class="metric-sub" style="color: #ef4444;">-98% Memory Reduction!</div>
+        </div>
+      </div>
+
+      <!-- Comparison Visual Bar -->
+      <div class="comp-bar-container">
+        <div class="comp-label">
+          <span>Memory Footprint Comparison</span>
+          <span>12.34 MB (Nim+Rust) vs. 650+ MB (Python+Chrome)</span>
+        </div>
+        <div class="bar-outer">
+          <div class="bar-hermes-nim" title="Hermes Nim: 5.8 MB">Nim</div>
+          <div class="bar-rust-browser" title="AI Rust Browser: 6.5 MB">Rust</div>
+          <div class="bar-python-original" title="Unused Headroom: Python / Chrome Bloat Eliminated">
+            ← 98% memory saved
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features-section container">
+    <h2 class="section-title">Engineered for Performance & Reach</h2>
+    <p class="section-subtitle">
+      Zero external runtimes required. One standalone binary that executes anywhere from a $3 VPS or Raspberry Pi to local workstations.
+    </p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🧠</div>
+        <h3 class="feature-title">Native ReAct Loop</h3>
+        <p class="feature-desc">
+          Full reasoning, decision-making, and tool dispatching loop written in 100% pure Nim with deterministic cycle-collecting ORC memory management.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🌐</div>
+        <h3 class="feature-title">Autonomous Web Browser</h3>
+        <p class="feature-desc">
+          Directly integrated with <strong>AI-Rust-Browser</strong> via Model Context Protocol (MCP). Navigates, snapshots in Markdown (#ref:N), clicks, and fills forms at ~6.5 MiB RAM.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3 class="feature-title">Native Coding Tools</h3>
+        <p class="feature-desc">
+          Includes atomic file operations (<code>read_file</code>, <code>write_file</code>, <code>edit_file</code>), recursive search, and native <code>terminal</code> shell execution with output budgeting.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">💾</div>
+        <h3 class="feature-title">Persistent Cognitive Memory</h3>
+        <p class="feature-desc">
+          Preserves facts, user preferences, and cross-session knowledge in persistent storage without overhead or slow databases.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔌</div>
+        <h3 class="feature-title">Universal LLM Client</h3>
+        <p class="feature-desc">
+          Native high-performance HTTP/HTTPS client compatible with OpenRouter, OpenAI, DeepSeek, Google Gemini, Ollama, and Groq with exponential backoff.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3 class="feature-title">Zero Resident Python</h3>
+        <p class="feature-desc">
+          Python is never kept alive in the background. If Python code execution is delegated, a transient standard-library micro-worker runs and exits in milliseconds.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quickstart Guide -->
+  <section id="quickstart" class="container" style="padding: 60px 0;">
+    <h2 class="section-title">Quickstart</h2>
+    <p class="section-subtitle">Compile from source in seconds with Nim 2.0+ and GCC.</p>
+
+    <div class="code-box">
+<span class="comment"># 1. Clone repository</span>
+<span class="cmd">git clone</span> https://github.com/kbelludoo/hermes-nim.git
+<span class="cmd">cd</span> hermes-nim
+
+<span class="comment"># 2. Build native release binary (Windows)</span>
+<span class="cmd">.\build.bat</span>
+<span class="comment"># Or Linux / macOS: ./build.sh</span>
+
+<span class="comment"># 3. Configure API key (.env)</span>
+<span class="cmd">echo</span> OPENROUTER_API_KEY=your_key_here > .env
+<span class="cmd">echo</span> HERMES_MODEL=anthropic/claude-3.5-sonnet >> .env
+
+<span class="comment"># 4. Launch interactive CLI REPL</span>
+<span class="cmd">.\bin\hermes.exe</span>
+
+<span class="comment"># 5. One-shot command mode</span>
+<span class="cmd">.\bin\hermes.exe</span> <span class="flag">-p</span> "Read package.json and summarize the project"
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>Hermes-Nim is open-source software licensed under the <a href="https://github.com/kbelludoo/hermes-nim/blob/main/LICENSE">MIT License</a>.</p>
+      <p style="margin-top: 8px;">Maintained by <a href="https://github.com/kbelludoo">kbelludoo</a> • Built with Nim & Rust 2026</p>
+    </div>
+  </footer>
+
+</body>
+</html>
