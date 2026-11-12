@@ -1,4 +1,4 @@
-import std/[os, strutils, tables]
+import std/[os, strutils, tables, json]
 import types
 import tools/opencode
 
@@ -95,6 +95,31 @@ proc loadSoulPrompt*(hermesHome: string): string =
          "Be direct: match the length of your reply to the weight of the ask. " &
          "No filler, no restating the request. Use tools to verify and execute tasks."
 
+proc loadTelegramCredentials*(): tuple[token, chatId: string] =
+  var token = getEnv("TELEGRAM_TOKEN")
+  var chat = getEnv("TELEGRAM_CHAT_ID")
+  if token.len > 0:
+    return (token, chat)
+
+  let candidates = [
+    ".secrets.json",
+    "/home/ubuntu/.secrets.json",
+    getHermesHome() / ".secrets.json",
+    getHomeDir() / ".secrets.json",
+    "C:/Users/kbell/Downloads/bot-template-go/.secrets.json"
+  ]
+  for path in candidates:
+    if fileExists(path):
+      try:
+        let j = parseJson(readFile(path))
+        let t = j{"telegramToken"}.getStr(j{"telegram_token"}.getStr(""))
+        let c = j{"telegramChatId"}.getStr(j{"telegram_chat_id"}.getStr(""))
+        if t.len > 0:
+          return (t, c)
+      except CatchableError:
+        discard
+  return ("", "")
+
 proc loadConfig*(customModel: string = "", customApiKey: string = "", customBaseUrl: string = "", useOpenCode: bool = false): AgentConfig =
   let hermesHome = getHermesHome()
   var envTable = initTable[string, string]()
@@ -105,15 +130,23 @@ proc loadConfig*(customModel: string = "", customApiKey: string = "", customBase
     let t = parseEnvFile(homeEnv)
     for k, v in t: envTable[k] = v
 
-  # 2. Load from local .env (overrides home)
-  if fileExists(".env"):
-    let t = parseEnvFile(".env")
-    for k, v in t: envTable[k] = v
+  # 2. Load from local .env or candidate env files
+  let envCandidates = [
+    ".env",
+    "agent-go/.env",
+    "/home/ubuntu/agent-go/.env",
+    "/home/ubuntu/.env"
+  ]
+  for c in envCandidates:
+    if fileExists(c):
+      let t = parseEnvFile(c)
+      for k, v in t:
+        if not envTable.hasKey(k): envTable[k] = v
 
   # 3. Environment variables take highest precedence
   for key in ["OPENAI_API_KEY", "OPENAI_BASE_URL", "OPENROUTER_API_KEY",
               "GEMINI_API_KEY", "GOOGLE_API_KEY", "DEEPSEEK_API_KEY",
-              "GROQ_API_KEY", "OLLAMA_BASE_URL", "OPENCODE_MODEL", "HERMES_MODEL", "LLM_MODEL"]:
+              "GROQ_API_KEY", "MISTRAL_API_KEY", "OLLAMA_BASE_URL", "OPENCODE_MODEL", "HERMES_MODEL", "LLM_MODEL"]:
     let v = getEnv(key)
     if v.len > 0:
       envTable[key] = v
@@ -123,7 +156,8 @@ proc loadConfig*(customModel: string = "", customApiKey: string = "", customBase
   var model = customModel
 
   # Determine Provider and BaseURL
-  if useOpenCode or baseUrl == "opencode" or isOpenCodeModel(model) or envTable.hasKey("OPENCODE_MODEL"):
+  let hasOpenCode = isOpenCodeInstalled()
+  if (useOpenCode or baseUrl == "opencode") or (hasOpenCode and (isOpenCodeModel(model) or (envTable.hasKey("OPENCODE_MODEL") and not envTable.hasKey("MISTRAL_API_KEY") and not envTable.hasKey("OPENAI_API_KEY") and not envTable.hasKey("OPENROUTER_API_KEY")))):
     baseUrl = "opencode"
     apiKey = "opencode-local"
     if model.len == 0 or not isOpenCodeModel(model):
@@ -159,6 +193,12 @@ proc loadConfig*(customModel: string = "", customApiKey: string = "", customBase
         baseUrl = "https://api.groq.com/openai/v1"
       if model.len == 0:
         model = envTable.getOrDefault("HERMES_MODEL", envTable.getOrDefault("LLM_MODEL", "llama-3.3-70b-versatile"))
+    elif envTable.hasKey("MISTRAL_API_KEY"):
+      apiKey = envTable["MISTRAL_API_KEY"]
+      if baseUrl.len == 0:
+        baseUrl = envTable.getOrDefault("MISTRAL_BASE_URL", "https://api.mistral.ai/v1")
+      if model.len == 0:
+        model = envTable.getOrDefault("MISTRAL_MODEL", envTable.getOrDefault("HERMES_MODEL", "codestral-latest"))
     elif envTable.hasKey("OLLAMA_BASE_URL"):
       apiKey = "ollama"
       if baseUrl.len == 0:

@@ -205,11 +205,10 @@ proc main() =
 
   # Check if Telegram Gateway mode requested
   if runTelegram:
-    let tgToken = getEnv("TELEGRAM_TOKEN")
-    let tgChatId = getEnv("TELEGRAM_CHAT_ID")
+    let (tgToken, tgChatId) = loadTelegramCredentials()
     if tgToken.len == 0:
-      echo colorize("Error: TELEGRAM_TOKEN environment variable is not set.", AnsiRed)
-      echo "Define it in your .env file or environment: TELEGRAM_TOKEN=123456:ABC-DEF..."
+      echo colorize("Error: TELEGRAM_TOKEN not found in environment or .secrets.json.", AnsiRed)
+      echo "Define it in your .env file or .secrets.json: TELEGRAM_TOKEN=123456:ABC-DEF..."
       quit(1)
     let bot = newTelegramBot(tgToken, tgChatId)
     startTelegramGateway(bot, ag)

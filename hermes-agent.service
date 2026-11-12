@@ -1,0 +1,16 @@
+[Unit]
+Description=⚡ Hermes Agent (Native Nim Telegram Gateway & Autonomous Assistant)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu
+ExecStart=/home/ubuntu/hermes-linux-x86_64 --telegram
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
