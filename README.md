@@ -71,10 +71,21 @@ HERMES_MODEL=anthropic/claude-3.5-sonnet
 # HERMES_MODEL=gpt-4o-mini
 ```
 
-### 3. Iniciar o Agente:
+### 3. Iniciar o Agente no Terminal (CLI REPL):
 ```cmd
 .\bin\hermes.exe
 ```
+
+### 4. Iniciar o Agente como Bot do Telegram (Gateway 24/7):
+```cmd
+.\bin\hermes.exe --telegram
+```
+Defina `TELEGRAM_TOKEN` e `TELEGRAM_CHAT_ID` no seu `.env`:
+```env
+TELEGRAM_TOKEN=1234567890:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+TELEGRAM_CHAT_ID=123456789
+```
+O Hermes funcionará como um daemon de mensagens contínuo no Telegram, respondendo pelo celular, executando ferramentas locais ou do navegador e reportando o status ao vivo — tudo consumindo apenas **~6 a 8 MB de RAM**!
 
 ---
 
