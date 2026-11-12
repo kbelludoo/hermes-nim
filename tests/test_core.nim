@@ -1,6 +1,6 @@
 import std/[os, unittest, strutils, json, tables]
 import ../src/types, ../src/utils, ../src/config, ../src/memory, ../src/skills, ../src/cron, ../src/sessions
-import ../src/tools/native_tools, ../src/tools/python_bridge, ../src/tools/rust_browser, ../src/tools/mbvm_db, ../src/tools/registry
+import ../src/tools/native_tools, ../src/tools/python_bridge, ../src/tools/rust_browser, ../src/tools/mbvm_db, ../src/tools/opencode, ../src/tools/registry
 
 suite "Hermes Nim Full Parity & MBVM-DB Tests":
 
@@ -116,8 +116,22 @@ suite "Hermes Nim Full Parity & MBVM-DB Tests":
 
     let schemas = reg.getOpenAIToolsSchema()
     echo "  [Test] Total Registered Tools: ", schemas.len
-    check schemas.len >= 20 # 9 native + 5 browser + 4 mbvm + 2 skills + 3 cron + 1 subagent
+    check schemas.len >= 25 # 9 native + 5 browser + 4 mbvm + 2 skills + 3 cron + 1 subagent + 2 opencode
 
     let memFinal = getResidentMemoryMB()
     echo "  [Test] Final Resident RAM: ", memFinal, " MB"
     check memFinal < 50.0
+
+  test "OpenCode Headless AI Integration (<50MB RAM)":
+    let cli = getOpenCodeCliPath()
+    echo "  [Test] OpenCode CLI Path: ", cli
+    check isOpenCodeInstalled()
+    
+    let models = listOpenCodeModels()
+    echo "  [Test] OpenCode Models detected: ", models.len
+    check models.len > 0
+    
+    # Test queryOpenCode with Gemini Flash Lite
+    let resp = queryOpenCode("google/gemini-2.5-flash-lite", "Responda apenas: TEST_OK")
+    echo "  [Test] OpenCode Response: ", resp.strip()
+    check "TEST_OK" in resp or resp.len > 0

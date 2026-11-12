@@ -408,3 +408,28 @@ proc initDefaultTools*(reg: ToolRegistry) =
       let model = args.getOrDefault("model").getStr("")
       return delegateTaskTool(task, model)
   ))
+
+  # 16. OpenCode AI Query Tool (Direct access to Gemini, DeepSeek, GLM, etc. without API keys)
+  reg.registerTool(ToolDefinition(
+    name: "opencode_query",
+    description: "Query any AI model connected to local OpenCode (e.g. google/gemini-2.5-flash, opencode/deepseek-v4.1-flash-free, opencode/glm-5.3-flash-free) headlessly without API keys.",
+    parameters: @[
+      ToolParam(name: "prompt", paramType: "string", description: "The prompt or query to send to the model", required: true),
+      ToolParam(name: "model", paramType: "string", description: "Target OpenCode model (default 'google/gemini-2.5-flash')", required: false)
+    ],
+    isPython: false,
+    handler: proc(args: JsonNode): string =
+      let prompt = args.getOrDefault("prompt").getStr("")
+      let model = args.getOrDefault("model").getStr("")
+      return opencodeQueryTool(model, prompt)
+  ))
+
+  # 17. OpenCode AI Models List Tool
+  reg.registerTool(ToolDefinition(
+    name: "opencode_models",
+    description: "List all AI models available through the local OpenCode installation.",
+    parameters: @[],
+    isPython: false,
+    handler: proc(args: JsonNode): string =
+      return opencodeModelsTool()
+  ))

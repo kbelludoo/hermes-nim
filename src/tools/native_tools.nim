@@ -1,5 +1,5 @@
 import std/[os, osproc, strutils, httpclient]
-import ../utils, ../approval
+import ../utils, ../approval, opencode
 
 proc execTerminal*(command: string, workingDir: string = "", yoloMode: bool = true): string =
   if command.strip().len == 0:
@@ -185,3 +185,15 @@ proc fetchUrlTool*(url: string): string =
     return truncateOutput(finalContent, 6000)
   except CatchableError as e:
     return "Failed to fetch URL: " & e.msg
+
+proc opencodeQueryTool*(model: string, prompt: string): string =
+  if prompt.strip().len == 0:
+    return "Error: Prompt cannot be empty."
+  let targetModel = if model.strip().len == 0: "google/gemini-2.5-flash" else: model.strip()
+  return queryOpenCode(targetModel, prompt)
+
+proc opencodeModelsTool*(): string =
+  let models = listOpenCodeModels()
+  if models.len == 0:
+    return "No OpenCode models detected or OpenCode CLI not installed."
+  return "Available OpenCode Models (" & $models.len & "):\n" & models.join("\n")

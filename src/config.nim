@@ -1,5 +1,6 @@
 import std/[os, strutils, tables]
 import types
+import tools/opencode
 
 proc getHermesHome*(): string =
   let envHome = getEnv("HERMES_HOME")
@@ -94,7 +95,7 @@ proc loadSoulPrompt*(hermesHome: string): string =
          "Be direct: match the length of your reply to the weight of the ask. " &
          "No filler, no restating the request. Use tools to verify and execute tasks."
 
-proc loadConfig*(customModel: string = "", customApiKey: string = "", customBaseUrl: string = ""): AgentConfig =
+proc loadConfig*(customModel: string = "", customApiKey: string = "", customBaseUrl: string = "", useOpenCode: bool = false): AgentConfig =
   let hermesHome = getHermesHome()
   var envTable = initTable[string, string]()
 
@@ -112,7 +113,7 @@ proc loadConfig*(customModel: string = "", customApiKey: string = "", customBase
   # 3. Environment variables take highest precedence
   for key in ["OPENAI_API_KEY", "OPENAI_BASE_URL", "OPENROUTER_API_KEY",
               "GEMINI_API_KEY", "GOOGLE_API_KEY", "DEEPSEEK_API_KEY",
-              "GROQ_API_KEY", "OLLAMA_BASE_URL", "HERMES_MODEL", "LLM_MODEL"]:
+              "GROQ_API_KEY", "OLLAMA_BASE_URL", "OPENCODE_MODEL", "HERMES_MODEL", "LLM_MODEL"]:
     let v = getEnv(key)
     if v.len > 0:
       envTable[key] = v
@@ -122,7 +123,12 @@ proc loadConfig*(customModel: string = "", customApiKey: string = "", customBase
   var model = customModel
 
   # Determine Provider and BaseURL
-  if apiKey.len == 0:
+  if useOpenCode or baseUrl == "opencode" or isOpenCodeModel(model) or envTable.hasKey("OPENCODE_MODEL"):
+    baseUrl = "opencode"
+    apiKey = "opencode-local"
+    if model.len == 0 or not isOpenCodeModel(model):
+      model = envTable.getOrDefault("OPENCODE_MODEL", "google/gemini-2.5-flash")
+  elif apiKey.len == 0:
     if envTable.hasKey("OPENAI_API_KEY"):
       apiKey = envTable["OPENAI_API_KEY"]
       if baseUrl.len == 0:

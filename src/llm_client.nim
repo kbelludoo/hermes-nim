@@ -1,5 +1,6 @@
 import std/[httpclient, json, strutils, os]
 import types
+import tools/opencode
 
 type
   LLMClient* = ref object
@@ -12,6 +13,26 @@ proc newLLMClient*(config: AgentConfig): LLMClient =
   result.httpClient = newHttpClient(timeout = 120_000)
 
 proc createChatCompletion*(client: LLMClient, messages: seq[Message], tools: seq[JsonNode] = @[]): LLMResponse =
+  # OpenCode Headless Execution Seam
+  if client.config.baseUrl == "opencode" or isOpenCodeModel(client.config.model):
+    let prompt = formatConversationForPrompt(messages, tools)
+    let rawOutput = queryOpenCode(client.config.model, prompt)
+
+    var res = LLMResponse()
+    res.promptTokens = max(1, prompt.len div 4)
+    res.completionTokens = max(1, rawOutput.len div 4)
+    res.totalTokens = res.promptTokens + res.completionTokens
+    res.finishReason = "stop"
+
+    if rawOutput.startsWith("OpenCode Error (") or rawOutput.startsWith("Error:"):
+      res.content = rawOutput
+      return res
+
+    let (cleanText, toolCalls) = extractToolCallFromText(rawOutput)
+    res.content = cleanText
+    res.toolCalls = toolCalls
+    return res
+
   var endpoint = client.config.baseUrl.strip()
   if endpoint.endsWith("/"):
     endpoint = endpoint[0 .. ^2]

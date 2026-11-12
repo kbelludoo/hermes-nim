@@ -1,5 +1,5 @@
 import std/[strutils, tables]
-import types, utils, memory, agent, skills, cron, sessions, tools/mbvm_db
+import types, utils, memory, agent, skills, cron, sessions, tools/mbvm_db, tools/opencode
 
 proc printBanner*(config: AgentConfig) =
   let memMB = getResidentMemoryMB()
@@ -18,6 +18,7 @@ proc printHelp() =
   echo "  " & colorize("/help", AnsiYellow) & "          - Show this help menu"
   echo "  " & colorize("/clear", AnsiYellow) & "         - Reset conversation context"
   echo "  " & colorize("/model <name>", AnsiYellow) & "  - Change active LLM model"
+  echo "  " & colorize("/opencode [m]", AnsiYellow) & "  - Switch to OpenCode AI model or list models"
   echo "  " & colorize("/memory", AnsiYellow) & "        - View persistent long-term memories"
   echo "  " & colorize("/skills", AnsiYellow) & "        - View loaded skills (SKILL.md)"
   echo "  " & colorize("/sessions", AnsiYellow) & "      - List recent saved conversation sessions"
@@ -123,6 +124,20 @@ proc startRepl*(ag: AIAgent) =
           echo colorize("Model switched to: ", AnsiGreen) & parts[1] & "\n"
         else:
           echo colorize("Usage: /model <model-name>\n", AnsiYellow)
+      of "/opencode":
+        if parts.len >= 2:
+          let target = parts[1]
+          ag.config.baseUrl = "opencode"
+          ag.config.model = target
+          ag.client.config.baseUrl = "opencode"
+          ag.client.config.model = target
+          echo colorize("✓ Switched to OpenCode AI Model: ", AnsiGreen) & target & "\n"
+        else:
+          echo colorize("Available OpenCode Headless AI Models:", AnsiCyan)
+          let ms = listOpenCodeModels()
+          for m in ms:
+            echo "  • " & m
+          echo colorize("\nUsage to switch: /opencode <model_name>\n", AnsiDim)
       else:
         echo colorize("Unknown command: " & cmd & ". Type /help for assistance.\n", AnsiRed)
       continue

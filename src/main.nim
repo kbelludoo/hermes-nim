@@ -1,5 +1,5 @@
 import std/[parseopt, strutils, os]
-import types, utils, config, agent, cli, sessions, tools/python_bridge, tools/mbvm_db, gateway/telegram
+import types, utils, config, agent, cli, sessions, tools/python_bridge, tools/mbvm_db, tools/opencode, gateway/telegram
 
 proc printUsage() =
   echo """
@@ -11,9 +11,12 @@ Usage:
 
 Options:
   -p, --prompt <text>         Run a one-shot query and exit
-  -m, --model <name>          Override model name (e.g. gpt-4o-mini, claude-3-5-sonnet)
+  -m, --model <name>          Override model name (e.g. gpt-4o-mini, google/gemini-2.5-flash)
   -k, --key <api_key>         Override LLM API Key
   -u, --url <endpoint>        Override OpenAI-compatible base URL
+  --opencode                  Use OpenCode headless AI models (Gemini, DeepSeek, etc. without API keys)
+  --opencode-model <model>    Select specific OpenCode model (e.g. google/gemini-2.5-flash)
+  --list-opencode-models      List all AI models available through local OpenCode
   -t, --telegram              Run as interactive Telegram Bot Gateway daemon
   -r, --resume [id|last]      Resume a previous saved session
   --list-sessions             List all saved conversation sessions
@@ -36,6 +39,8 @@ proc main() =
   var showStatsOnly = false
   var runTelegram = false
   var listSessionsOnly = false
+  var listOpenCodeOnly = false
+  var useOpenCodeFlag = false
   var yoloFlag = false
   var sliceDb = ""
   var sliceSymbol = ""
@@ -48,7 +53,7 @@ proc main() =
     of cmdShortOption, cmdLongOption:
       let k = p.key.toLowerAscii()
       var v = p.val
-      if v.len == 0 and k notin ["stats", "t", "telegram", "yolo", "list-sessions", "h", "help"]:
+      if v.len == 0 and k notin ["stats", "t", "telegram", "yolo", "list-sessions", "opencode", "list-opencode-models", "h", "help"]:
         p.next()
         if p.kind == cmdArgument:
           v = p.key
@@ -62,6 +67,13 @@ proc main() =
         keyOverride = v
       of "u", "url":
         urlOverride = v
+      of "opencode":
+        useOpenCodeFlag = true
+      of "opencode-model":
+        useOpenCodeFlag = true
+        modelOverride = v
+      of "list-opencode-models":
+        listOpenCodeOnly = true
       of "t", "telegram":
         runTelegram = true
       of "r", "resume":
@@ -91,7 +103,14 @@ proc main() =
     echo "Current Process Working Set (RAM): ", formatFloat(memMB, ffDecimal, 2), " MB"
     quit(0)
 
-  var cfg = loadConfig(modelOverride, keyOverride, urlOverride)
+  if listOpenCodeOnly:
+    echo colorize("Available OpenCode Headless AI Models:", AnsiCyan)
+    let models = listOpenCodeModels()
+    for m in models:
+      echo "  • " & m
+    quit(0)
+
+  var cfg = loadConfig(modelOverride, keyOverride, urlOverride, useOpenCode = useOpenCodeFlag)
   if yoloFlag:
     cfg.yoloMode = true
 

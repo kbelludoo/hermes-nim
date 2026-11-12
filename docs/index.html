@@ -516,6 +516,14 @@
       </div>
 
       <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <h3 class="feature-title">OpenCode Headless AI</h3>
+        <p class="feature-desc">
+          Direct integration with OpenCode CLI. Access authenticated <strong>Google Gemini 2.5 Flash</strong>, <strong>DeepSeek Flash Free</strong>, and GLM headlessly without opening any GUI app or needing external API keys.
+        </p>
+      </div>
+
+      <div class="feature-card">
         <div class="feature-icon">📱</div>
         <h3 class="feature-title">Telegram Bot Gateway</h3>
         <p class="feature-desc">
@@ -539,14 +547,18 @@
 <span class="cmd">.\build.bat</span>
 <span class="comment"># Or Linux / macOS: ./build.sh</span>
 
-<span class="comment"># 3. Configure API key (.env)</span>
+<span class="comment"># 3. Use with OpenCode AI (Zero API Keys needed!)</span>
+<span class="cmd">.\bin\hermes.exe</span> <span class="flag">--opencode</span> <span class="flag">-p</span> "Explique ponteiros em C em 2 frases"
+<span class="cmd">.\bin\hermes.exe</span> <span class="flag">--list-opencode-models</span>
+
+<span class="comment"># 4. Or configure standard API key (.env)</span>
 <span class="cmd">echo</span> OPENROUTER_API_KEY=your_key_here > .env
 <span class="cmd">echo</span> HERMES_MODEL=anthropic/claude-3.5-sonnet >> .env
 
-<span class="comment"># 4. Launch interactive CLI REPL</span>
+<span class="comment"># 5. Launch interactive CLI REPL</span>
 <span class="cmd">.\bin\hermes.exe</span>
 
-<span class="comment"># 5. Run as 24/7 Telegram Bot Gateway</span>
+<span class="comment"># 6. Run as 24/7 Telegram Bot Gateway</span>
 <span class="cmd">.\bin\hermes.exe</span> <span class="flag">--telegram</span>
 
 <span class="comment"># 6. One-shot command mode</span>
