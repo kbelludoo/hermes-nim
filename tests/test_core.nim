@@ -1,5 +1,5 @@
 import std/[os, unittest, strutils, json, tables]
-import ../src/types, ../src/utils, ../src/config, ../src/memory, ../src/skills, ../src/cron, ../src/sessions
+import ../src/types, ../src/utils, ../src/config, ../src/memory, ../src/skills, ../src/cron, ../src/sessions, ../src/catalog
 import ../src/tools/native_tools, ../src/tools/python_bridge, ../src/tools/rust_browser, ../src/tools/mbvm_db, ../src/tools/opencode, ../src/tools/registry
 
 suite "Hermes Nim Full Parity & MBVM-DB Tests":
@@ -102,7 +102,7 @@ suite "Hermes Nim Full Parity & MBVM-DB Tests":
     check loadedMsgs.len == 2
     check loadedMsgs[0].content == "What is 2+2?"
 
-  test "Tool Registry (23 Tools: Native + Browser + MBVM + Skills + Cron)":
+  test "Tool Registry (30 Tools: Native + Browser + MBVM + Skills + Cron + OpenCode)":
     let tempHome = getTempDir() / "hermes_test_home_all"
     let store = newMemoryStore(tempHome)
     let pyExe = findPythonExecutable()
@@ -111,16 +111,39 @@ suite "Hermes Nim Full Parity & MBVM-DB Tests":
     let sReg = newSkillRegistry(tempHome)
     let cSched = newCronScheduler()
 
-    let reg = newToolRegistry(store, pyExe, wScript, bExe, sReg, cSched, yoloMode = true)
+    let reg = newToolRegistry(store, pyExe, wScript, bExe, sReg, cSched, hermesHome = tempHome, yoloMode = true)
     reg.initDefaultTools()
 
     let schemas = reg.getOpenAIToolsSchema()
     echo "  [Test] Total Registered Tools: ", schemas.len
-    check schemas.len >= 25 # 9 native + 5 browser + 4 mbvm + 2 skills + 3 cron + 1 subagent + 2 opencode
+    check schemas.len >= 30 # 9 native + 5 browser + 4 mbvm + 4 skills + 3 cron + 1 subagent + 2 opencode + 2 skills community
 
     let memFinal = getResidentMemoryMB()
     echo "  [Test] Final Resident RAM: ", memFinal, " MB"
     check memFinal < 50.0
+
+  test "Decentralized Skills Marketplace (Obsidian GitOps pattern)":
+    let cat = loadLocalCatalog()
+    echo "  [Test] Local Community Skills count: ", cat.len
+    check cat.len >= 5
+
+    # Search test
+    let gitMatches = searchCommunitySkills(cat, "git")
+    check gitMatches.len >= 1
+    check gitMatches[0].id == "git-master"
+
+    # Install test
+    let tempHome = getTempDir() / "hermes_skills_install_test"
+    let (okInst, instMsg) = installCommunitySkill("git-master", tempHome)
+    echo "  [Test] Install Result: ", instMsg
+    check okInst
+    check fileExists(tempHome / "skills" / "git-master" / "SKILL.md")
+
+    # Uninstall test
+    let (okUninst, uninstMsg) = uninstallCommunitySkill("git-master", tempHome)
+    echo "  [Test] Uninstall Result: ", uninstMsg
+    check okUninst
+    check not dirExists(tempHome / "skills" / "git-master")
 
   test "OpenCode Headless AI Integration (<50MB RAM)":
     let cli = getOpenCodeCliPath()

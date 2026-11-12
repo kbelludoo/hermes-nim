@@ -1,4 +1,4 @@
-import std/[tables, strutils, json, os, times]
+import std/[tables, strutils, json, os]
 import types
 
 type

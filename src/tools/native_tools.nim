@@ -1,5 +1,5 @@
 import std/[os, osproc, strutils, httpclient]
-import ../utils, ../approval, opencode
+import ../utils, ../approval, ../catalog, opencode
 
 proc execTerminal*(command: string, workingDir: string = "", yoloMode: bool = true): string =
   if command.strip().len == 0:
@@ -197,3 +197,19 @@ proc opencodeModelsTool*(): string =
   if models.len == 0:
     return "No OpenCode models detected or OpenCode CLI not installed."
   return "Available OpenCode Models (" & $models.len & "):\n" & models.join("\n")
+
+proc skillSearchTool*(query: string = ""): string =
+  let catalog = fetchCommunitySkills()
+  let matches = searchCommunitySkills(catalog, query)
+  if matches.len == 0:
+    return "No community skills found matching query '" & query & "'."
+  var lines: seq[string] = @[]
+  for s in matches:
+    lines.add("• [" & s.id & "] " & s.name & " (" & s.category & ") - " & s.description)
+  return "Community Skills Catalog (" & $matches.len & " skills):\n" & lines.join("\n")
+
+proc skillInstallTool*(skillId: string, hermesHome: string): string =
+  if skillId.strip().len == 0:
+    return "Error: Skill ID cannot be empty."
+  let (ok, msg) = installCommunitySkill(skillId, hermesHome)
+  return msg

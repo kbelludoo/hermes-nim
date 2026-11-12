@@ -1,5 +1,5 @@
 import std/[strutils, tables]
-import types, utils, memory, agent, skills, cron, sessions, tools/mbvm_db, tools/opencode
+import types, utils, memory, agent, skills, cron, sessions, catalog, tools/mbvm_db, tools/opencode
 
 proc printBanner*(config: AgentConfig) =
   let memMB = getResidentMemoryMB()
@@ -20,7 +20,7 @@ proc printHelp() =
   echo "  " & colorize("/model <name>", AnsiYellow) & "  - Change active LLM model"
   echo "  " & colorize("/opencode [m]", AnsiYellow) & "  - Switch to OpenCode AI model or list models"
   echo "  " & colorize("/memory", AnsiYellow) & "        - View persistent long-term memories"
-  echo "  " & colorize("/skills", AnsiYellow) & "        - View loaded skills (SKILL.md)"
+  echo "  " & colorize("/skills", AnsiYellow) & "        - View loaded skills (or /skills [catalog|search|install])"
   echo "  " & colorize("/sessions", AnsiYellow) & "      - List recent saved conversation sessions"
   echo "  " & colorize("/cron", AnsiYellow) & "          - View scheduled background cron tasks"
   echo "  " & colorize("/mbvm", AnsiYellow) & "          - Inspect MBVM-DB status and codebase stats"
@@ -94,7 +94,59 @@ proc startRepl*(ag: AIAgent) =
       of "/memory":
         echo colorize("Persistent Memories:\n", AnsiBold) & ag.memoryStore.recall("") & "\n"
       of "/skills":
-        echo colorize(ag.skillRegistry.listSkills() & "\n", AnsiCyan)
+        if parts.len == 1:
+          echo colorize(ag.skillRegistry.listSkills() & "\n", AnsiCyan)
+        else:
+          let subcmd = parts[1].toLowerAscii()
+          case subcmd
+          of "catalog", "list", "marketplace":
+            let cat = fetchCommunitySkills()
+            echo colorize("Hermes Community Skills Catalog (" & $cat.len & " skills available):", AnsiBold & AnsiCyan)
+            for s in cat:
+              echo "  • " & colorize(s.id, AnsiBold) & " (" & s.category & ") by @" & s.author
+              echo "    " & s.description
+              echo "    Install with: /skills install " & s.id
+            echo ""
+          of "search":
+            if parts.len >= 3:
+              let q = parts[2 .. ^1].join(" ")
+              let cat = fetchCommunitySkills()
+              let matches = searchCommunitySkills(cat, q)
+              if matches.len == 0:
+                echo colorize("No skills found matching '" & q & "'.\n", AnsiYellow)
+              else:
+                echo colorize("Found " & $matches.len & " matching skill(s):", AnsiBold & AnsiCyan)
+                for s in matches:
+                  echo "  • " & colorize(s.id, AnsiBold) & " - " & s.name & " (" & s.category & ")"
+                  echo "    " & s.description
+                echo ""
+            else:
+              echo colorize("Usage: /skills search <query>\n", AnsiYellow)
+          of "install":
+            if parts.len >= 3:
+              let sid = parts[2]
+              echo colorize("Installing community skill '" & sid & "'...", AnsiCyan)
+              let (ok, msg) = installCommunitySkill(sid, ag.config.hermesHome)
+              if ok:
+                ag.skillRegistry.reload(ag.config.hermesHome)
+                echo colorize("✓ " & msg & "\n", AnsiGreen)
+              else:
+                echo colorize("✗ " & msg & "\n", AnsiRed)
+            else:
+              echo colorize("Usage: /skills install <skill_id>\n", AnsiYellow)
+          of "uninstall", "remove":
+            if parts.len >= 3:
+              let sid = parts[2]
+              let (ok, msg) = uninstallCommunitySkill(sid, ag.config.hermesHome)
+              if ok:
+                ag.skillRegistry.reload(ag.config.hermesHome)
+                echo colorize("✓ " & msg & "\n", AnsiGreen)
+              else:
+                echo colorize("✗ " & msg & "\n", AnsiRed)
+            else:
+              echo colorize("Usage: /skills uninstall <skill_id>\n", AnsiYellow)
+          else:
+            echo colorize("Unknown skills command. Available: /skills, /skills catalog, /skills search <q>, /skills install <id>\n", AnsiYellow)
       of "/cron":
         echo colorize(ag.cronScheduler.listJobs() & "\n", AnsiYellow)
       of "/mbvm":

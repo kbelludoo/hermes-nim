@@ -11,11 +11,12 @@ type
     rustBrowserExe*: string
     skillRegistry*: SkillRegistry
     cronScheduler*: CronScheduler
+    hermesHome*: string
     yoloMode*: bool
 
 proc newToolRegistry*(memStore: MemoryStore, pythonExe: string, workerScript: string,
                       rustBrowserExe: string = "", skillReg: SkillRegistry = nil,
-                      cronSched: CronScheduler = nil, yoloMode: bool = true): ToolRegistry =
+                      cronSched: CronScheduler = nil, hermesHome: string = "", yoloMode: bool = true): ToolRegistry =
   new(result)
   result.tools = initTable[string, ToolDefinition]()
   result.memoryStore = memStore
@@ -24,6 +25,7 @@ proc newToolRegistry*(memStore: MemoryStore, pythonExe: string, workerScript: st
   result.rustBrowserExe = if rustBrowserExe.len > 0: rustBrowserExe else: findRustBrowserExe()
   result.skillRegistry = skillReg
   result.cronScheduler = cronSched
+  result.hermesHome = hermesHome
   result.yoloMode = yoloMode
 
 proc registerTool*(reg: ToolRegistry, def: ToolDefinition) =
@@ -366,6 +368,31 @@ proc initDefaultTools*(reg: ToolRegistry) =
       handler: proc(args: JsonNode): string =
         let sName = args.getOrDefault("skill_name").getStr("")
         return sReg.viewSkill(sName)
+    ))
+
+    reg.registerTool(ToolDefinition(
+      name: "skill_search",
+      description: "Search the Hermes Community Skills Catalog for plugins and capabilities (Obsidian-style git marketplace).",
+      parameters: @[
+        ToolParam(name: "query", paramType: "string", description: "Search keyword, tag, or category (leave empty to list all)", required: false)
+      ],
+      isPython: false,
+      handler: proc(args: JsonNode): string =
+        let q = args.getOrDefault("query").getStr("")
+        return skillSearchTool(q)
+    ))
+
+    let hHome = reg.hermesHome
+    reg.registerTool(ToolDefinition(
+      name: "skill_install",
+      description: "Install a community skill directly from GitHub releases/manifest into ~/.hermes/skills/.",
+      parameters: @[
+        ToolParam(name: "skill_id", paramType: "string", description: "Unique ID of skill to install (e.g. 'git-master', 'code-review', 'docker-compose')", required: true)
+      ],
+      isPython: false,
+      handler: proc(args: JsonNode): string =
+        let sid = args.getOrDefault("skill_id").getStr("")
+        return skillInstallTool(sid, hHome)
     ))
 
   # 14. Cron & Recurring Task Scheduler Tools

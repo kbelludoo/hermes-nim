@@ -1,0 +1,47 @@
+[
+  {
+    "id": "git-master",
+    "name": "Git Master",
+    "author": "Hermes Community",
+    "description": "Expert git repository management, branching, rebasing, bisecting, and PR creation workflows.",
+    "category": "development",
+    "url": "https://raw.githubusercontent.com/kbelludoo/hermes-nim/main/skills/git-master/SKILL.md",
+    "tags": ["git", "version-control", "github", "vcs"]
+  },
+  {
+    "id": "code-review",
+    "name": "Code Reviewer",
+    "author": "Hermes Community",
+    "description": "Rigorous security, performance, memory leaks, and architecture code auditor for C, Nim, Go, Rust, and Python.",
+    "category": "development",
+    "url": "https://raw.githubusercontent.com/kbelludoo/hermes-nim/main/skills/code-review/SKILL.md",
+    "tags": ["code", "review", "audit", "security", "architecture"]
+  },
+  {
+    "id": "docker-compose",
+    "name": "Docker & DevOps Wizard",
+    "author": "Hermes Community",
+    "description": "Generates, validates, and manages multi-container Dockerfiles, compose stacks, and systemd services.",
+    "category": "devops",
+    "url": "https://raw.githubusercontent.com/kbelludoo/hermes-nim/main/skills/docker-compose/SKILL.md",
+    "tags": ["docker", "containers", "devops", "deploy"]
+  },
+  {
+    "id": "web-scraper",
+    "name": "Web Scraping & Data Extractor",
+    "author": "Hermes Community",
+    "description": "Extracts structured tables, JSON, and clean markdown from websites using the lean Rust Browser engine.",
+    "category": "data",
+    "url": "https://raw.githubusercontent.com/kbelludoo/hermes-nim/main/skills/web-scraper/SKILL.md",
+    "tags": ["scraper", "browser", "extraction", "data"]
+  },
+  {
+    "id": "sqlite-expert",
+    "name": "SQLite & Database Optimizer",
+    "author": "Hermes Community",
+    "description": "Query optimization, index analysis, WAL mode configuration, and migration management.",
+    "category": "database",
+    "url": "https://raw.githubusercontent.com/kbelludoo/hermes-nim/main/skills/sqlite-expert/SKILL.md",
+    "tags": ["sqlite", "database", "sql", "performance"]
+  }
+]

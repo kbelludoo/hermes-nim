@@ -36,34 +36,40 @@ Projetado especificamente para operar com consumo de memória ultra-baixo: **est
 
 | Componente / Modo | Limite Requisitado | Memória Real Medida |
 | :--- | :---: | :---: |
-| **Hermes Nim Core (27 Ferramentas Ativas)** | < 50.0 MB | **5.79 MB** |
-| **Execução com OpenCode AI (Gemini 2.5 Flash)** | < 50.0 MB | **5.79 MB** |
+| **Hermes Nim Core (30 Ferramentas Ativas)** | < 50.0 MB | **5.82 MB** |
+| **Execução com OpenCode AI (Gemini 2.5 Flash)** | < 50.0 MB | **5.82 MB** |
 | **AI-Rust-Browser MCP (Navegação Headless)** | < 50.0 MB | **~6.50 MiB** |
-| **Pilha Completa (Hermes + Browser + MBVM)** | < 50.0 MB | **~12.34 MB** |
+| **Pilha Completa (Hermes + Browser + MBVM Graph)** | < 50.0 MB | **~12.34 MB** |
 | **Original Python + Chrome + Heavy SQLite** | < 50.0 MB | **650+ MB** |
 
 ---
 
-## 🛠️ As 27 Ferramentas Integradas
+## 🛠️ As 30 Ferramentas Integradas
 
-### 1. Ferramentas de IA OpenCode Headless:
+### 1. Marketplace Comunitário de Habilidades (GitOps descentralizado estilo Obsidian):
+- **`skill_search`**: O agente pesquisa habilidades comunitárias em catálogo descentralizado no GitHub.
+- **`skill_install`**: O agente baixa e instala uma habilidade comunitária (`SKILL.md`) autonomamente.
+- **`skills_list`**: Lista todas as habilidades locais carregadas no ambiente.
+- **`skill_view`**: Inspeciona e lê instruções de um `SKILL.md` específico.
+
+### 2. Ferramentas de IA OpenCode Headless:
 - **`opencode_query`**: Consulta qualquer modelo do OpenCode (Google Gemini, DeepSeek Flash, GLM, etc.) diretamente sem precisar abrir o app gráfico.
 - **`opencode_models`**: Lista em tempo real todos os modelos de IA disponíveis na máquina.
 
-### 2. Ferramentas do MBVM-DB (Grafo de Código & Slicing):
+### 3. Ferramentas do MBVM-DB (Grafo de Código & Slicing Nativo Nim):
 - **`mbvm_slice`**: Extrai subgrafo inteligente em torno de um símbolo (função, struct, interface) com -93% de tokens.
 - **`mbvm_slice_budget`**: Extrai fatia de código com teto estrito de tokens e penalização de ruído.
 - **`mbvm_inspect`**: Inspeciona arquivos, símbolos e status do arquivo binário `.mbvmdb`.
 - **`mbvm_build`**: Indexa um diretório ou repositório inteiro em formato `.mbvmdb`.
 
-### 3. Ferramentas do AI-Rust-Browser (Navegação Web):
+### 4. Ferramentas do AI-Rust-Browser (Navegação Web):
 - **`browser_navigate`**: Abre qualquer URL com renderização semântica.
 - **`browser_snapshot`**: Captura a página em Markdown otimizado com marcadores `#ref:N`.
 - **`browser_click`**: Clica em botões e links pelo identificador de referência.
 - **`browser_type`**: Digita textos em campos de formulário e inputs.
 - **`browser_search`**: Busca rápida na web pelo motor do Rust Browser.
 
-### 4. Ferramentas Nativas do Sistema:
+### 5. Ferramentas Nativas do Sistema:
 - **`terminal`**: Executa comandos shell no sistema (com proteção de aprovação/segurança).
 - **`read_file`**: Lê arquivos com suporte a paginação de linhas.
 - **`write_file`**: Cria ou sobrescreve arquivos.
@@ -74,9 +80,7 @@ Projetado especificamente para operar com consumo de memória ultra-baixo: **est
 - **`memory_save`**: Salva informações de longo prazo em memória persistente.
 - **`memory_recall`**: Recupera dados da memória de longo prazo.
 
-### 5. Habilidades, Agendamento e Subagentes:
-- **`skills_list`**: Lista todas as habilidades (`SKILL.md`) disponíveis.
-- **`skill_view`**: Exibe o conteúdo completo e instruções de uma habilidade.
+### 6. Agendamento em Segundo Plano e Subagentes:
 - **`cron_add`**: Agenda uma instrução periódica em segundo plano.
 - **`cron_list`**: Lista tarefas cron ativas.
 - **`cron_remove`**: Remove uma tarefa cron agendada.
@@ -102,39 +106,57 @@ Projetado especificamente para operar com consumo de memória ultra-baixo: **est
 .\bin\hermes.exe --opencode
 ```
 
-### 2. Modo Interativo (REPL):
+### 2. Catálogo Descentralizado de Habilidades (GitOps estilo Obsidian):
+```cmd
+:: Listar habilidades da comunidade disponíveis no catálogo GitHub
+.\bin\hermes.exe --list-community-skills
+
+:: Pesquisar habilidades por palavra-chave (ex: docker, git, python)
+.\bin\hermes.exe --search-skills docker
+
+:: Instalar uma habilidade comunitária diretamente para ~/.hermes/skills/
+.\bin\hermes.exe --install-skill docker-compose
+
+:: Desinstalar habilidade
+.\bin\hermes.exe --uninstall-skill docker-compose
+```
+
+### 3. Modo Interativo (REPL):
 ```cmd
 .\bin\hermes.exe
 ```
 
 Comandos Slash disponíveis no terminal:
+- `/skills` — Lista habilidades instaladas locais.
+- `/skills catalog` — Explora o catálogo de habilidades da comunidade.
+- `/skills search <termo>` — Pesquisa habilidades no repositório descentralizado.
+- `/skills install <id>` — Instala e recarrega uma nova habilidade sem reiniciar o agente.
 - `/opencode` — Lista modelos ou alterna para IA do OpenCode (`/opencode google/gemini-2.5-flash`).
-- `/stats` — Medição de RAM e consumo de tokens.
-- `/skills` — Lista habilidades instaladas.
+- `/stats` — Medição de RAM (<50MB) e consumo de tokens.
 - `/sessions` — Lista sessões anteriores salvas.
 - `/cron` — Exibe tarefas recorrentes ativas.
-- `/mbvm` — Inspeciona o status do MBVM-DB.
+- `/mbvm` — Inspeciona o status do MBVM-DB e grafo em memória.
 - `/yolo` — Alterna o modo de segurança de comandos.
-- `/tools` — Lista todas as 27 ferramentas registradas.
+- `/tools` — Lista todas as 30 ferramentas registradas.
 - `/model <nome>` — Troca de modelo de IA.
 - `/clear` — Limpa o contexto da conversa.
 
-### 3. Retomar Conversa Anterior (`--resume`):
+### 4. Retomar Conversa Anterior (`--resume`):
 ```cmd
 .\bin\hermes.exe --resume last
 ```
 
-### 4. Listar Sessões Salvas:
+### 5. Listar Sessões Salvas:
 ```cmd
 .\bin\hermes.exe --list-sessions
 ```
 
-### 5. Modo Telegram Gateway (24/7):
+### 6. Modo Telegram Gateway (24/7):
 ```cmd
 .\bin\hermes.exe --telegram
 ```
 
-### 6. Modo YOLO (Sem pedir confirmação para comandos):
+### 7. Modo YOLO (Sem pedir confirmação para comandos):
 ```cmd
 .\bin\hermes.exe --yolo
 ```

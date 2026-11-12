@@ -49,6 +49,7 @@ proc newAIAgent*(config: AgentConfig, existingSessionId: string = "", initialMes
     rustBrowserExe = "",
     skillReg = result.skillRegistry,
     cronSched = result.cronScheduler,
+    hermesHome = config.hermesHome,
     yoloMode = config.yoloMode
   )
   result.registry.initDefaultTools()

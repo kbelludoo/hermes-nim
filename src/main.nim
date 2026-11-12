@@ -1,5 +1,5 @@
 import std/[parseopt, strutils, os]
-import types, utils, config, agent, cli, sessions, tools/python_bridge, tools/mbvm_db, tools/opencode, gateway/telegram
+import types, utils, config, agent, cli, sessions, catalog, tools/python_bridge, tools/opencode, gateway/telegram
 
 proc printUsage() =
   echo """
@@ -17,6 +17,10 @@ Options:
   --opencode                  Use OpenCode headless AI models (Gemini, DeepSeek, etc. without API keys)
   --opencode-model <model>    Select specific OpenCode model (e.g. google/gemini-2.5-flash)
   --list-opencode-models      List all AI models available through local OpenCode
+  --list-community-skills     List all skills in the decentralized community catalog
+  --search-skills <query>     Search for community skills by keyword
+  --install-skill <skill_id>  Install a community skill to ~/.hermes/skills/<skill_id>
+  --uninstall-skill <id>      Uninstall an installed community skill
   -t, --telegram              Run as interactive Telegram Bot Gateway daemon
   -r, --resume [id|last]      Resume a previous saved session
   --list-sessions             List all saved conversation sessions
@@ -40,6 +44,10 @@ proc main() =
   var runTelegram = false
   var listSessionsOnly = false
   var listOpenCodeOnly = false
+  var listCommunitySkillsOnly = false
+  var searchSkillsQuery = ""
+  var installSkillId = ""
+  var uninstallSkillId = ""
   var useOpenCodeFlag = false
   var yoloFlag = false
   var sliceDb = ""
@@ -53,7 +61,7 @@ proc main() =
     of cmdShortOption, cmdLongOption:
       let k = p.key.toLowerAscii()
       var v = p.val
-      if v.len == 0 and k notin ["stats", "t", "telegram", "yolo", "list-sessions", "opencode", "list-opencode-models", "h", "help"]:
+      if v.len == 0 and k notin ["stats", "t", "telegram", "yolo", "list-sessions", "opencode", "list-opencode-models", "list-community-skills", "h", "help"]:
         p.next()
         if p.kind == cmdArgument:
           v = p.key
@@ -74,6 +82,14 @@ proc main() =
         modelOverride = v
       of "list-opencode-models":
         listOpenCodeOnly = true
+      of "list-community-skills":
+        listCommunitySkillsOnly = true
+      of "search-skills":
+        searchSkillsQuery = v
+      of "install-skill":
+        installSkillId = v
+      of "uninstall-skill":
+        uninstallSkillId = v
       of "t", "telegram":
         runTelegram = true
       of "r", "resume":
@@ -113,6 +129,47 @@ proc main() =
   var cfg = loadConfig(modelOverride, keyOverride, urlOverride, useOpenCode = useOpenCodeFlag)
   if yoloFlag:
     cfg.yoloMode = true
+
+  if listCommunitySkillsOnly:
+    let cat = fetchCommunitySkills()
+    echo colorize("Hermes Community Skills Catalog (" & $cat.len & " skills available):", AnsiBold & AnsiCyan)
+    for s in cat:
+      echo "  • " & colorize(s.id, AnsiBold) & " (" & s.category & ") by @" & s.author
+      echo "    " & s.description
+      echo "    Install with: hermes_nim --install-skill " & s.id
+    quit(0)
+
+  if searchSkillsQuery.len > 0:
+    let cat = fetchCommunitySkills()
+    let matches = searchCommunitySkills(cat, searchSkillsQuery)
+    if matches.len == 0:
+      echo colorize("No community skills found matching '" & searchSkillsQuery & "'.", AnsiYellow)
+    else:
+      echo colorize("Matching Community Skills (" & $matches.len & "):", AnsiBold & AnsiCyan)
+      for s in matches:
+        echo "  • " & colorize(s.id, AnsiBold) & " - " & s.name & " (" & s.category & ")"
+        echo "    " & s.description
+        echo "    Install with: hermes_nim --install-skill " & s.id
+    quit(0)
+
+  if installSkillId.len > 0:
+    echo colorize("Installing community skill '" & installSkillId & "'...", AnsiCyan)
+    let (ok, msg) = installCommunitySkill(installSkillId, cfg.hermesHome)
+    if ok:
+      echo colorize("✓ " & msg, AnsiGreen)
+      quit(0)
+    else:
+      echo colorize("✗ " & msg, AnsiRed)
+      quit(1)
+
+  if uninstallSkillId.len > 0:
+    let (ok, msg) = uninstallCommunitySkill(uninstallSkillId, cfg.hermesHome)
+    if ok:
+      echo colorize("✓ " & msg, AnsiGreen)
+      quit(0)
+    else:
+      echo colorize("✗ " & msg, AnsiRed)
+      quit(1)
 
   if listSessionsOnly:
     let sl = listSessions(cfg.hermesHome)

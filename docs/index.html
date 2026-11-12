@@ -385,7 +385,7 @@
     </div>
     <h1>The Autonomous AI Agent<br>Running in <span class="highlight">< 15 MB RAM</span></h1>
     <p>
-      A complete, zero-bloat rewrite of Hermes Agent in <strong>Nim</strong> integrated with <strong>MBVM-DB</strong> (code graph & -93% token slicing) and the <strong>AI-Rust-Browser</strong> MCP engine. Native compilation, deterministic memory with ORC, and 25 tools without the Python or Chrome footprint.
+      A complete, zero-bloat rewrite of Hermes Agent in <strong>Nim</strong> integrated with <strong>MBVM-DB</strong> (code graph & -93% token slicing), <strong>AI-Rust-Browser</strong> MCP engine, and decentralized <strong>Community Skills Marketplace</strong>. Native compilation, deterministic memory with ORC, and 30 tools in just ~5.8 MB RAM without the Python or Chrome footprint.
     </p>
     <div class="hero-actions">
       <a href="#quickstart" class="btn btn-primary">Get Started</a>
@@ -530,6 +530,14 @@
           Run 24/7 as an authorized personal assistant on Telegram (<code>--telegram</code>). Chat from your mobile phone, run tools, and check stats in < 8 MB RAM.
         </p>
       </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🧩</div>
+        <h3 class="feature-title">Decentralized Skills Marketplace</h3>
+        <p class="feature-desc">
+          Obsidian-inspired GitOps catalog (<code>catalog/community-skills.json</code>). Zero server costs: search, install, and hot-reload community skills (<code>SKILL.md</code>) directly via CLI or autonomous agent tools.
+        </p>
+      </div>
     </div>
   </section>
 
@@ -551,17 +559,22 @@
 <span class="cmd">.\bin\hermes.exe</span> <span class="flag">--opencode</span> <span class="flag">-p</span> "Explique ponteiros em C em 2 frases"
 <span class="cmd">.\bin\hermes.exe</span> <span class="flag">--list-opencode-models</span>
 
-<span class="comment"># 4. Or configure standard API key (.env)</span>
+<span class="comment"># 4. Explore & Install Community Skills (GitOps Marketplace)</span>
+<span class="cmd">.\bin\hermes.exe</span> <span class="flag">--list-community-skills</span>
+<span class="cmd">.\bin\hermes.exe</span> <span class="flag">--search-skills</span> docker
+<span class="cmd">.\bin\hermes.exe</span> <span class="flag">--install-skill</span> docker-compose
+
+<span class="comment"># 5. Or configure standard API key (.env)</span>
 <span class="cmd">echo</span> OPENROUTER_API_KEY=your_key_here > .env
 <span class="cmd">echo</span> HERMES_MODEL=anthropic/claude-3.5-sonnet >> .env
 
-<span class="comment"># 5. Launch interactive CLI REPL</span>
+<span class="comment"># 6. Launch interactive CLI REPL</span>
 <span class="cmd">.\bin\hermes.exe</span>
 
-<span class="comment"># 6. Run as 24/7 Telegram Bot Gateway</span>
+<span class="comment"># 7. Run as 24/7 Telegram Bot Gateway</span>
 <span class="cmd">.\bin\hermes.exe</span> <span class="flag">--telegram</span>
 
-<span class="comment"># 6. One-shot command mode</span>
+<span class="comment"># 8. One-shot command mode</span>
 <span class="cmd">.\bin\hermes.exe</span> <span class="flag">-p</span> "Read package.json and summarize the project"
     </div>
   </section>

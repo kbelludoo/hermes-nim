@@ -62,6 +62,13 @@ proc newSkillRegistry*(hermesHome: string): SkillRegistry =
             if s.name.len > 0 and not result.skills.hasKey(s.name):
               result.skills[s.name] = s
 
+proc reload*(reg: SkillRegistry, hermesHome: string) =
+  if reg == nil: return
+  reg.skills.clear()
+  let fresh = newSkillRegistry(hermesHome)
+  for k, v in fresh.skills:
+    reg.skills[k] = v
+
 proc listSkills*(reg: SkillRegistry): string =
   if reg.skills.len == 0:
     return "No skills currently installed."
