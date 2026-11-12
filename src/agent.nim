@@ -1,5 +1,5 @@
-import std/[os, times, strutils]
-import types, utils, llm_client, memory, skills, cron, sessions, subagent
+import std/[os, times]
+import types, utils, llm_client, memory, skills, cron, sessions, subagent, mbvm_native
 import tools/registry
 
 type
@@ -10,6 +10,7 @@ type
     registry*: ToolRegistry
     skillRegistry*: SkillRegistry
     cronScheduler*: CronScheduler
+    graph*: ConversationGraph
     messages*: seq[Message]
     sessionId*: string
     totalPromptTokens*: int
@@ -29,6 +30,9 @@ proc newAIAgent*(config: AgentConfig, existingSessionId: string = "", initialMes
     result.sessionId = existingSessionId
   else:
     result.sessionId = "session_" & now().format("yyyyMMdd") & "_" & now().format("HHmmss")
+
+  let graphPath = config.hermesHome / "sessions" / (result.sessionId & ".mbvm.json")
+  result.graph = loadFromJson(graphPath)
 
   # Resolve python worker script path
   let appDir = getAppDir()
@@ -109,6 +113,16 @@ proc pruneContextIfNeeded*(agent: AIAgent, maxChars: int = 100_000) =
   agent.messages = pruned
 
 proc runConversation*(agent: AIAgent, userInput: string, onChunk: proc(text: string) = nil): string =
+  # 1. Native MBVM-DB Auto-Slicing (Invisible Context Injection in Pure Nim)
+  let relevantSlice = agent.graph.extractSlice(userInput, maxDepth = 2)
+  if relevantSlice.len > 0:
+    let sliceText = projectSlice(relevantSlice)
+    if sliceText.len > 0:
+      agent.messages.add(Message(
+        role: "system",
+        content: "[MBVM Subgraph Knowledge (Native Nim -95% tokens)]:\n" & sliceText
+      ))
+
   agent.messages.add(Message(
     role: "user",
     content: userInput
@@ -119,6 +133,8 @@ proc runConversation*(agent: AIAgent, userInput: string, onChunk: proc(text: str
   let toolsSchema = agent.registry.getOpenAIToolsSchema()
   var turnCount = 0
   var finalAnswer = ""
+  var turnToolCalls: seq[ToolCall] = @[]
+  var turnToolOutputs: seq[string] = @[]
 
   while turnCount < agent.config.maxTurns:
     inc(turnCount)
@@ -162,6 +178,8 @@ proc runConversation*(agent: AIAgent, userInput: string, onChunk: proc(text: str
           onChunk(toolNotice)
 
         let toolOutput = agent.registry.executeTool(tc.functionName, tc.arguments)
+        turnToolCalls.add(tc)
+        turnToolOutputs.add(toolOutput)
 
         if onChunk != nil:
           let preview = if toolOutput.len > 300: toolOutput[0 ..< 300] & "... (" & $toolOutput.len & " chars)" else: toolOutput
@@ -186,4 +204,15 @@ proc runConversation*(agent: AIAgent, userInput: string, onChunk: proc(text: str
 
   # Automatically persist session
   saveSession(agent.config.hermesHome, agent.sessionId, agent.messages)
+
+  # 2. Native MBVM-DB Auto-Ingestion (Invisible Background Graph Update in Pure Nim)
+  discard agent.graph.ingestTurn(
+    userInput,
+    turnToolCalls,
+    turnToolOutputs,
+    finalAnswer,
+    agent.messages.len
+  )
+  agent.graph.saveToJson(agent.config.hermesHome / "sessions" / (agent.sessionId & ".mbvm.json"))
+
   return finalAnswer
