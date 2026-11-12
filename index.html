@@ -385,7 +385,7 @@
     </div>
     <h1>The Autonomous AI Agent<br>Running in <span class="highlight">< 15 MB RAM</span></h1>
     <p>
-      A complete, zero-bloat rewrite of Hermes Agent in <strong>Nim</strong> combined with the <strong>AI-Rust-Browser</strong> MCP engine. Native compilation, deterministic memory with ORC, and full headless web interaction without the Python or Chrome footprint.
+      A complete, zero-bloat rewrite of Hermes Agent in <strong>Nim</strong> integrated with <strong>MBVM-DB</strong> (code graph & -93% token slicing) and the <strong>AI-Rust-Browser</strong> MCP engine. Native compilation, deterministic memory with ORC, and 25 tools without the Python or Chrome footprint.
     </p>
     <div class="hero-actions">
       <a href="#quickstart" class="btn btn-primary">Get Started</a>
@@ -488,6 +488,22 @@
         <h3 class="feature-title">Universal LLM Client</h3>
         <p class="feature-desc">
           Native high-performance HTTP/HTTPS client compatible with OpenRouter, OpenAI, DeepSeek, Google Gemini, Ollama, and Groq with exponential backoff.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📦</div>
+        <h3 class="feature-title">MBVM-DB Smart Slicing</h3>
+        <p class="feature-desc">
+          Embedded code graph & CSR BFS traversal engine. Slices exact subgraphs around symbols (<code>mbvm_slice</code>) with <strong>-93% token reduction</strong> over raw files.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔄</div>
+        <h3 class="feature-title">Session Resume & Skills</h3>
+        <p class="feature-desc">
+          Continuously persists conversations with full resume support (<code>--resume last</code>), background Cron tasks, and discovery of specialized <code>SKILL.md</code> personas.
         </p>
       </div>
 
