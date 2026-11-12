@@ -37,6 +37,7 @@ type
     hermesHome*: string
     pythonPath*: string
     maxMemoryMB*: float
+    yoloMode*: bool
 
   LLMResponse* = object
     content*: string

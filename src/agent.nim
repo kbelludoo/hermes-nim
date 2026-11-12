@@ -1,5 +1,6 @@
-import std/os
-import types, utils, llm_client, memory, tools/registry
+import std/[os, times, strutils]
+import types, utils, llm_client, memory, skills, cron, sessions, subagent
+import tools/registry
 
 type
   AIAgent* = ref object
@@ -7,40 +8,81 @@ type
     client*: LLMClient
     memoryStore*: MemoryStore
     registry*: ToolRegistry
+    skillRegistry*: SkillRegistry
+    cronScheduler*: CronScheduler
     messages*: seq[Message]
+    sessionId*: string
     totalPromptTokens*: int
     totalCompletionTokens*: int
 
-proc newAIAgent*(config: AgentConfig): AIAgent =
+proc runConversation*(agent: AIAgent, userInput: string, onChunk: proc(text: string) = nil): string
+
+proc newAIAgent*(config: AgentConfig, existingSessionId: string = "", initialMessages: seq[Message] = @[]): AIAgent =
   new(result)
   result.config = config
   result.client = newLLMClient(config)
   result.memoryStore = newMemoryStore(config.hermesHome)
+  result.skillRegistry = newSkillRegistry(config.hermesHome)
+  result.cronScheduler = newCronScheduler()
   
+  if existingSessionId.len > 0:
+    result.sessionId = existingSessionId
+  else:
+    result.sessionId = "session_" & now().format("yyyyMMdd") & "_" & now().format("HHmmss")
+
   # Resolve python worker script path
   let appDir = getAppDir()
   var wScript = appDir / ".." / "python_worker" / "tool_runner.py"
   if not fileExists(wScript):
     wScript = appDir / "python_worker" / "tool_runner.py"
   if not fileExists(wScript):
-    wScript = getCurrentDir() / "hermes_nim" / "python_worker" / "tool_runner.py"
+    wScript = getCurrentDir() / "python_worker" / "tool_runner.py"
 
-  result.registry = newToolRegistry(result.memoryStore, config.pythonPath, wScript)
+  result.registry = newToolRegistry(
+    result.memoryStore,
+    config.pythonPath,
+    wScript,
+    rustBrowserExe = "",
+    skillReg = result.skillRegistry,
+    cronSched = result.cronScheduler,
+    yoloMode = config.yoloMode
+  )
   result.registry.initDefaultTools()
-  result.messages = @[]
+
   result.totalPromptTokens = 0
   result.totalCompletionTokens = 0
 
-  # Build initial system message with SOUL and relevant memory
-  var sysPrompt = config.systemPrompt
-  let recalledMem = result.memoryStore.recall("")
-  if recalledMem.len > 0 and recalledMem != "No memories stored yet.":
-    sysPrompt &= "\n\n[Persistent Memory Context]:\n" & recalledMem
+  if initialMessages.len > 0:
+    result.messages = initialMessages
+  else:
+    result.messages = @[]
+    # Build initial system message with SOUL, memory, and skills overview
+    var sysPrompt = config.systemPrompt
+    
+    let recalledMem = result.memoryStore.recall("")
+    if recalledMem.len > 0 and recalledMem != "No memories stored yet.":
+      sysPrompt &= "\n\n[Persistent Memory Context]:\n" & recalledMem
 
-  result.messages.add(Message(
-    role: "system",
-    content: sysPrompt
-  ))
+    let skillsList = result.skillRegistry.listSkills()
+    if skillsList != "No skills currently installed.":
+      sysPrompt &= "\n\n[Available Skills]:\n" & skillsList & "\nUse `skill_view` to read full instructions for any skill when relevant."
+
+    result.messages.add(Message(
+      role: "system",
+      content: sysPrompt
+    ))
+
+  # Initialize Subagent delegate runner
+  let baseCfg = config
+  setSubagentRunner(proc(task: string, modelOverride: string = ""): string =
+    var subCfg = baseCfg
+    if modelOverride.len > 0:
+      subCfg.model = modelOverride
+    subCfg.maxTurns = 10
+    subCfg.systemPrompt = "You are a focused subagent assistant. Complete the given task thoroughly and return a clear, structured summary report."
+    let subAg = newAIAgent(subCfg)
+    return subAg.runConversation(task)
+  )
 
 proc pruneContextIfNeeded*(agent: AIAgent, maxChars: int = 100_000) =
   var totalChars = 0
@@ -51,7 +93,6 @@ proc pruneContextIfNeeded*(agent: AIAgent, maxChars: int = 100_000) =
     return
 
   # Keep system prompt (index 0) and the first user message (index 1)
-  # Prune oldest tool results from the middle
   var pruned: seq[Message] = @[agent.messages[0]]
   if agent.messages.len > 1:
     pruned.add(agent.messages[1])
@@ -107,7 +148,6 @@ proc runConversation*(agent: AIAgent, userInput: string, onChunk: proc(text: str
 
     # Check if assistant invoked tools
     if resp.toolCalls.len > 0:
-      # Append assistant turn with tool calls
       var asstMsg = Message(
         role: "assistant",
         content: resp.content,
@@ -135,7 +175,6 @@ proc runConversation*(agent: AIAgent, userInput: string, onChunk: proc(text: str
           content: toolOutput
         ))
 
-      # Continue loop to allow model to react to tool output
       continue
     else:
       # No tool calls made; model finished its turn
@@ -145,4 +184,6 @@ proc runConversation*(agent: AIAgent, userInput: string, onChunk: proc(text: str
       ))
       break
 
+  # Automatically persist session
+  saveSession(agent.config.hermesHome, agent.sessionId, agent.messages)
   return finalAnswer

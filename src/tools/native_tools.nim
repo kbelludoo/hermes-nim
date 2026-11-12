@@ -1,9 +1,12 @@
 import std/[os, osproc, strutils, httpclient]
-import ../utils
+import ../utils, ../approval
 
-proc execTerminal*(command: string, workingDir: string = ""): string =
+proc execTerminal*(command: string, workingDir: string = "", yoloMode: bool = true): string =
   if command.strip().len == 0:
     return "Error: Empty command provided."
+
+  if not confirmExecution(command, yoloMode):
+    return "Execution cancelled by user for security reasons."
     
   var cwd = workingDir
   if cwd.len == 0:

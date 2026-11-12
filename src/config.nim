@@ -180,5 +180,6 @@ proc loadConfig*(customModel: string = "", customApiKey: string = "", customBase
     systemPrompt: loadSoulPrompt(hermesHome),
     hermesHome: hermesHome,
     pythonPath: findPythonExecutable(),
-    maxMemoryMB: 50.0  # Strict 50MB ceiling requirement
+    maxMemoryMB: 50.0, # Strict 50MB ceiling requirement
+    yoloMode: false
   )

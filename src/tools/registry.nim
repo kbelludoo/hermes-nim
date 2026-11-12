@@ -1,5 +1,6 @@
 import std/[tables, json, strutils]
-import ../types, ../memory, native_tools, python_bridge, rust_browser
+import ../types, ../memory, ../skills, ../cron, ../subagent
+import native_tools, python_bridge, rust_browser, mbvm_db
 
 type
   ToolRegistry* = ref object
@@ -8,14 +9,22 @@ type
     pythonExe*: string
     workerScript*: string
     rustBrowserExe*: string
+    skillRegistry*: SkillRegistry
+    cronScheduler*: CronScheduler
+    yoloMode*: bool
 
-proc newToolRegistry*(memStore: MemoryStore, pythonExe: string, workerScript: string, rustBrowserExe: string = ""): ToolRegistry =
+proc newToolRegistry*(memStore: MemoryStore, pythonExe: string, workerScript: string,
+                      rustBrowserExe: string = "", skillReg: SkillRegistry = nil,
+                      cronSched: CronScheduler = nil, yoloMode: bool = true): ToolRegistry =
   new(result)
   result.tools = initTable[string, ToolDefinition]()
   result.memoryStore = memStore
   result.pythonExe = pythonExe
   result.workerScript = workerScript
   result.rustBrowserExe = if rustBrowserExe.len > 0: rustBrowserExe else: findRustBrowserExe()
+  result.skillRegistry = skillReg
+  result.cronScheduler = cronSched
+  result.yoloMode = yoloMode
 
 proc registerTool*(reg: ToolRegistry, def: ToolDefinition) =
   reg.tools[def.name] = def
@@ -44,6 +53,7 @@ proc executeTool*(reg: ToolRegistry, name: string, argsJsonStr: string): string 
 
 proc initDefaultTools*(reg: ToolRegistry) =
   # 1. terminal / bash
+  let isYolo = reg.yoloMode
   reg.registerTool(ToolDefinition(
     name: "terminal",
     description: "Execute a command in the local shell/terminal. Use this for running build scripts, system commands, git, tests, etc.",
@@ -55,7 +65,7 @@ proc initDefaultTools*(reg: ToolRegistry) =
     handler: proc(args: JsonNode): string =
       let cmd = args.getOrDefault("command").getStr("")
       let wd = args.getOrDefault("working_dir").getStr("")
-      return execTerminal(cmd, wd)
+      return execTerminal(cmd, wd, isYolo)
   ))
 
   # 2. read_file
@@ -260,3 +270,141 @@ proc initDefaultTools*(reg: ToolRegistry) =
       handler: proc(args: JsonNode): string =
         return callRustBrowserMcp(bExe, "browser_search", args)
     ))
+
+  # 12. MBVM-DB Tools (Code Graph, Smart Slicing & 95%+ Token Reduction)
+  reg.registerTool(ToolDefinition(
+    name: "mbvm_slice",
+    description: "Extract an intelligent subgraph code slice around a target symbol using MBVM-DB (-93% tokens over raw code).",
+    parameters: @[
+      ToolParam(name: "target_path", paramType: "string", description: "Path to .mbvmdb binary database or codebase directory", required: true),
+      ToolParam(name: "symbol", paramType: "string", description: "Target function, struct, method or interface to slice", required: true),
+      ToolParam(name: "depth", paramType: "integer", description: "Traversal depth in call-graph (default 1)", required: false)
+    ],
+    isPython: false,
+    handler: proc(args: JsonNode): string =
+      let tp = args.getOrDefault("target_path").getStr("")
+      let sym = args.getOrDefault("symbol").getStr("")
+      let depth = args.getOrDefault("depth").getInt(1)
+      return mbvmSliceTool(tp, sym, depth)
+  ))
+
+  reg.registerTool(ToolDefinition(
+    name: "mbvm_slice_budget",
+    description: "Extract a token-bounded slice around a symbol with noise penalty and hard token ceiling using MBVM-DB.",
+    parameters: @[
+      ToolParam(name: "target_path", paramType: "string", description: "Path to .mbvmdb file or codebase directory", required: true),
+      ToolParam(name: "symbol", paramType: "string", description: "Target symbol name", required: true),
+      ToolParam(name: "token_budget", paramType: "integer", description: "Strict token budget limit (e.g. 300, 500)", required: true)
+    ],
+    isPython: false,
+    handler: proc(args: JsonNode): string =
+      let tp = args.getOrDefault("target_path").getStr("")
+      let sym = args.getOrDefault("symbol").getStr("")
+      let b = args.getOrDefault("token_budget").getInt(500)
+      return mbvmSliceBudgetTool(tp, sym, b)
+  ))
+
+  reg.registerTool(ToolDefinition(
+    name: "mbvm_inspect",
+    description: "Inspect the symbols, types, files and opcode status of a .mbvmdb database.",
+    parameters: @[
+      ToolParam(name: "target_path", paramType: "string", description: "Path to .mbvmdb file (optional, default codebase.mbvmdb)", required: false)
+    ],
+    isPython: false,
+    handler: proc(args: JsonNode): string =
+      let tp = args.getOrDefault("target_path").getStr("")
+      return mbvmInspectTool(tp)
+  ))
+
+  reg.registerTool(ToolDefinition(
+    name: "mbvm_build",
+    description: "Compile and index a directory or repository into a persistent high-performance .mbvmdb binary database.",
+    parameters: @[
+      ToolParam(name: "dir_path", paramType: "string", description: "Root directory of codebase to index", required: true),
+      ToolParam(name: "output_file", paramType: "string", description: "Output filename (default codebase.mbvmdb)", required: false)
+    ],
+    isPython: false,
+    handler: proc(args: JsonNode): string =
+      let dp = args.getOrDefault("dir_path").getStr(".")
+      let outF = args.getOrDefault("output_file").getStr("codebase.mbvmdb")
+      return mbvmBuildTool(dp, outF)
+  ))
+
+  # 13. Skills System Tools
+  let sReg = reg.skillRegistry
+  if sReg != nil:
+    reg.registerTool(ToolDefinition(
+      name: "skills_list",
+      description: "List all loaded skills and their descriptions.",
+      parameters: @[],
+      isPython: false,
+      handler: proc(args: JsonNode): string =
+        return sReg.listSkills()
+    ))
+
+    reg.registerTool(ToolDefinition(
+      name: "skill_view",
+      description: "Read the complete instructions and prompts of a specific skill.",
+      parameters: @[
+        ToolParam(name: "skill_name", paramType: "string", description: "The name of the skill to view", required: true)
+      ],
+      isPython: false,
+      handler: proc(args: JsonNode): string =
+        let sName = args.getOrDefault("skill_name").getStr("")
+        return sReg.viewSkill(sName)
+    ))
+
+  # 14. Cron & Recurring Task Scheduler Tools
+  let cSched = reg.cronScheduler
+  if cSched != nil:
+    reg.registerTool(ToolDefinition(
+      name: "cron_add",
+      description: "Schedule a recurring background prompt/task at fixed minute intervals.",
+      parameters: @[
+        ToolParam(name: "name", paramType: "string", description: "Unique name identifier for the job", required: true),
+        ToolParam(name: "interval_minutes", paramType: "integer", description: "Interval in minutes between runs", required: true),
+        ToolParam(name: "prompt", paramType: "string", description: "Prompt or instruction to execute periodically", required: true)
+      ],
+      isPython: false,
+      handler: proc(args: JsonNode): string =
+        let name = args.getOrDefault("name").getStr("")
+        let im = args.getOrDefault("interval_minutes").getInt(60)
+        let prompt = args.getOrDefault("prompt").getStr("")
+        return cSched.addJob(name, im, prompt)
+    ))
+
+    reg.registerTool(ToolDefinition(
+      name: "cron_list",
+      description: "List all currently scheduled background cron tasks.",
+      parameters: @[],
+      isPython: false,
+      handler: proc(args: JsonNode): string =
+        return cSched.listJobs()
+    ))
+
+    reg.registerTool(ToolDefinition(
+      name: "cron_remove",
+      description: "Cancel and remove a scheduled cron job by name.",
+      parameters: @[
+        ToolParam(name: "name", paramType: "string", description: "Name of the job to cancel", required: true)
+      ],
+      isPython: false,
+      handler: proc(args: JsonNode): string =
+        let name = args.getOrDefault("name").getStr("")
+        return cSched.removeJob(name)
+    ))
+
+  # 15. Subagent Delegation Tool
+  reg.registerTool(ToolDefinition(
+    name: "delegate_task",
+    description: "Delegate a complex subtask or research to an isolated background subagent, returning a concise summary report without cluttering main context.",
+    parameters: @[
+      ToolParam(name: "task", paramType: "string", description: "Detailed description of the task for the subagent", required: true),
+      ToolParam(name: "model", paramType: "string", description: "Optional model override for the subagent", required: false)
+    ],
+    isPython: false,
+    handler: proc(args: JsonNode): string =
+      let task = args.getOrDefault("task").getStr("")
+      let model = args.getOrDefault("model").getStr("")
+      return delegateTaskTool(task, model)
+  ))
