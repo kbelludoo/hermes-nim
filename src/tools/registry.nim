@@ -330,6 +330,20 @@ proc initDefaultTools*(reg: ToolRegistry) =
       return mbvmBuildTool(dp, outF)
   ))
 
+  reg.registerTool(ToolDefinition(
+    name: "mbvm_ingest_conversation",
+    description: "Compile an AI conversation transcript (JSONL) into a lean MBVM-DB sub-graph database for instant sub-microsecond slicing.",
+    parameters: @[
+      ToolParam(name: "transcript_path", paramType: "string", description: "Path to transcript.jsonl", required: true),
+      ToolParam(name: "output_file", paramType: "string", description: "Output .mbvmdb file path (default conversation.mbvmdb)", required: false)
+    ],
+    isPython: false,
+    handler: proc(args: JsonNode): string =
+      let tp = args.getOrDefault("transcript_path").getStr("")
+      let outP = args.getOrDefault("output_file").getStr("conversation.mbvmdb")
+      return mbvmIngestConversationTool(tp, outP)
+  ))
+
   # 13. Skills System Tools
   let sReg = reg.skillRegistry
   if sReg != nil:

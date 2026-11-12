@@ -90,3 +90,17 @@ proc mbvmBuildTool*(dirPath: string = ".", outputFile: string = "codebase.mbvmdb
     return "Successfully indexed codebase into " & outputFile & ":\n" & output.strip()
   except CatchableError as e:
     return "Failed to build mbvm-db: " & e.msg
+
+proc mbvmIngestConversationTool*(transcriptPath: string, outputFile: string = "conversation.mbvmdb"): string =
+  let exe = findMbvmDbExe()
+  if exe.len == 0:
+    return "Error: mbvm-db executable not found."
+
+  try:
+    let cmd = quoteShell(exe) & " ingest-conversation " & quoteShell(transcriptPath) & " " & quoteShell(outputFile)
+    let (output, exitCode) = execCmdEx(cmd)
+    if exitCode != 0:
+      return "mbvm-db ingest-conversation error:\n" & output
+    return output.strip()
+  except CatchableError as e:
+    return "Failed to ingest conversation into mbvm-db: " & e.msg
