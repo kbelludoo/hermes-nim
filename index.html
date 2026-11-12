@@ -498,6 +498,14 @@
           Python is never kept alive in the background. If Python code execution is delegated, a transient standard-library micro-worker runs and exits in milliseconds.
         </p>
       </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3 class="feature-title">Telegram Bot Gateway</h3>
+        <p class="feature-desc">
+          Run 24/7 as an authorized personal assistant on Telegram (<code>--telegram</code>). Chat from your mobile phone, run tools, and check stats in < 8 MB RAM.
+        </p>
+      </div>
     </div>
   </section>
 
@@ -522,7 +530,10 @@
 <span class="comment"># 4. Launch interactive CLI REPL</span>
 <span class="cmd">.\bin\hermes.exe</span>
 
-<span class="comment"># 5. One-shot command mode</span>
+<span class="comment"># 5. Run as 24/7 Telegram Bot Gateway</span>
+<span class="cmd">.\bin\hermes.exe</span> <span class="flag">--telegram</span>
+
+<span class="comment"># 6. One-shot command mode</span>
 <span class="cmd">.\bin\hermes.exe</span> <span class="flag">-p</span> "Read package.json and summarize the project"
     </div>
   </section>
