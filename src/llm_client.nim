@@ -118,6 +118,8 @@ proc createChatCompletion*(client: LLMClient, messages: seq[Message], tools: seq
       let msgObj = choice["message"]
       if msgObj.hasKey("content") and msgObj["content"].kind == JString:
         res.content = msgObj["content"].getStr()
+      if res.content.len == 0 and msgObj.hasKey("reasoning_content") and msgObj["reasoning_content"].kind == JString:
+        res.content = msgObj["reasoning_content"].getStr()
       
       if msgObj.hasKey("tool_calls") and msgObj["tool_calls"].kind == JArray:
         for tc in msgObj["tool_calls"]:

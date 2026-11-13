@@ -36,7 +36,8 @@ Projetado especificamente para operar com consumo de memória ultra-baixo: **est
 
 | Componente / Modo | Limite Requisitado | Memória Real Medida |
 | :--- | :---: | :---: |
-| **Hermes Nim Core (30 Ferramentas Ativas)** | < 50.0 MB | **5.82 MB** |
+| **Hermes Nim Core (32 Ferramentas Ativas)** | < 50.0 MB | **5.82 MB** |
+| **Execução com NVIDIA Build (Llama 3.2 90B)** | < 50.0 MB | **5.85 MB** |
 | **Execução com OpenCode AI (Gemini 2.5 Flash)** | < 50.0 MB | **5.82 MB** |
 | **AI-Rust-Browser MCP (Navegação Headless)** | < 50.0 MB | **~6.50 MiB** |
 | **Pilha Completa (Hermes + Browser + MBVM Graph)** | < 50.0 MB | **~12.34 MB** |
@@ -44,7 +45,7 @@ Projetado especificamente para operar com consumo de memória ultra-baixo: **est
 
 ---
 
-## 🛠️ As 30 Ferramentas Integradas
+## 🛠️ As 32 Ferramentas Integradas
 
 ### 1. Marketplace Comunitário de Habilidades (GitOps descentralizado estilo Obsidian):
 - **`skill_search`**: O agente pesquisa habilidades comunitárias em catálogo descentralizado no GitHub.
@@ -56,20 +57,24 @@ Projetado especificamente para operar com consumo de memória ultra-baixo: **est
 - **`opencode_query`**: Consulta qualquer modelo do OpenCode (Google Gemini, DeepSeek Flash, GLM, etc.) diretamente sem precisar abrir o app gráfico.
 - **`opencode_models`**: Lista em tempo real todos os modelos de IA disponíveis na máquina.
 
-### 3. Ferramentas do MBVM-DB (Grafo de Código & Slicing Nativo Nim):
+### 3. Ferramentas do NVIDIA Build / NIM API (80+ Modelos Enterprise):
+- **`nvidia_query`**: Consulta direta a modelos massivos de IA corporativa na nuvem NVIDIA (Llama 3.2 90B Vision, Nemotron-3 Reasoning, Gemma 3 12B, Mixtral 8x22B, etc.).
+- **`nvidia_models`**: Lista em tempo real os mais de 80 modelos de inferência rápida disponíveis na sua chave NVIDIA.
+
+### 4. Ferramentas do MBVM-DB (Grafo de Código & Slicing Nativo Nim):
 - **`mbvm_slice`**: Extrai subgrafo inteligente em torno de um símbolo (função, struct, interface) com -93% de tokens.
 - **`mbvm_slice_budget`**: Extrai fatia de código com teto estrito de tokens e penalização de ruído.
 - **`mbvm_inspect`**: Inspeciona arquivos, símbolos e status do arquivo binário `.mbvmdb`.
 - **`mbvm_build`**: Indexa um diretório ou repositório inteiro em formato `.mbvmdb`.
 
-### 4. Ferramentas do AI-Rust-Browser (Navegação Web):
+### 5. Ferramentas do AI-Rust-Browser (Navegação Web):
 - **`browser_navigate`**: Abre qualquer URL com renderização semântica.
 - **`browser_snapshot`**: Captura a página em Markdown otimizado com marcadores `#ref:N`.
 - **`browser_click`**: Clica em botões e links pelo identificador de referência.
 - **`browser_type`**: Digita textos em campos de formulário e inputs.
 - **`browser_search`**: Busca rápida na web pelo motor do Rust Browser.
 
-### 5. Ferramentas Nativas do Sistema:
+### 6. Ferramentas Nativas do Sistema:
 - **`terminal`**: Executa comandos shell no sistema (com proteção de aprovação/segurança).
 - **`read_file`**: Lê arquivos com suporte a paginação de linhas.
 - **`write_file`**: Cria ou sobrescreve arquivos.
@@ -80,7 +85,7 @@ Projetado especificamente para operar com consumo de memória ultra-baixo: **est
 - **`memory_save`**: Salva informações de longo prazo em memória persistente.
 - **`memory_recall`**: Recupera dados da memória de longo prazo.
 
-### 6. Agendamento em Segundo Plano e Subagentes:
+### 7. Agendamento em Segundo Plano e Subagentes:
 - **`cron_add`**: Agenda uma instrução periódica em segundo plano.
 - **`cron_list`**: Lista tarefas cron ativas.
 - **`cron_remove`**: Remove uma tarefa cron agendada.
@@ -106,7 +111,22 @@ Projetado especificamente para operar com consumo de memória ultra-baixo: **est
 .\bin\hermes.exe --opencode
 ```
 
-### 2. Catálogo Descentralizado de Habilidades (GitOps estilo Obsidian):
+### 2. Usar com o NVIDIA Build / NIM API (80+ Modelos Enterprise):
+```cmd
+:: Listar mais de 80 modelos disponíveis (Llama 3.2 90B, Nemotron-3 Reasoning, Gemma 3, etc.)
+.\bin\hermes.exe --list-nvidia-models
+
+:: Executar com o modelo padrao NVIDIA (Meta Llama 3.2 90B Vision Instruct)
+.\bin\hermes.exe --nvidia -p "Analise as vantagens de performance de Nim frente a Go"
+
+:: Executar com modelo de raciocinio profundo da NVIDIA
+.\bin\hermes.exe --nvidia-model nvidia/nemotron-3-nano-omni-30b-a3b-reasoning -p "Resolva este problema de logica passo a passo"
+
+:: Iniciar REPL interativo conectado a nuvem NVIDIA
+.\bin\hermes.exe --nvidia
+```
+
+### 3. Catálogo Descentralizado de Habilidades (GitOps estilo Obsidian):
 ```cmd
 :: Listar habilidades da comunidade disponíveis no catálogo GitHub
 .\bin\hermes.exe --list-community-skills
@@ -121,42 +141,43 @@ Projetado especificamente para operar com consumo de memória ultra-baixo: **est
 .\bin\hermes.exe --uninstall-skill docker-compose
 ```
 
-### 3. Modo Interativo (REPL):
+### 4. Modo Interativo (REPL):
 ```cmd
 .\bin\hermes.exe
 ```
 
 Comandos Slash disponíveis no terminal:
+- `/nvidia` — Lista modelos da NVIDIA Build NIM ou alterna para modelo (`/nvidia meta/llama-3.2-90b-vision-instruct`).
+- `/opencode` — Lista modelos ou alterna para IA do OpenCode (`/opencode google/gemini-2.5-flash`).
 - `/skills` — Lista habilidades instaladas locais.
 - `/skills catalog` — Explora o catálogo de habilidades da comunidade.
 - `/skills search <termo>` — Pesquisa habilidades no repositório descentralizado.
 - `/skills install <id>` — Instala e recarrega uma nova habilidade sem reiniciar o agente.
-- `/opencode` — Lista modelos ou alterna para IA do OpenCode (`/opencode google/gemini-2.5-flash`).
 - `/stats` — Medição de RAM (<50MB) e consumo de tokens.
 - `/sessions` — Lista sessões anteriores salvas.
 - `/cron` — Exibe tarefas recorrentes ativas.
 - `/mbvm` — Inspeciona o status do MBVM-DB e grafo em memória.
 - `/yolo` — Alterna o modo de segurança de comandos.
-- `/tools` — Lista todas as 30 ferramentas registradas.
+- `/tools` — Lista todas as 32 ferramentas registradas.
 - `/model <nome>` — Troca de modelo de IA.
 - `/clear` — Limpa o contexto da conversa.
 
-### 4. Retomar Conversa Anterior (`--resume`):
+### 5. Retomar Conversa Anterior (`--resume`):
 ```cmd
 .\bin\hermes.exe --resume last
 ```
 
-### 5. Listar Sessões Salvas:
+### 6. Listar Sessões Salvas:
 ```cmd
 .\bin\hermes.exe --list-sessions
 ```
 
-### 6. Modo Telegram Gateway (24/7):
+### 7. Modo Telegram Gateway (24/7):
 ```cmd
 .\bin\hermes.exe --telegram
 ```
 
-### 7. Modo YOLO (Sem pedir confirmação para comandos):
+### 8. Modo YOLO (Sem pedir confirmação para comandos):
 ```cmd
 .\bin\hermes.exe --yolo
 ```

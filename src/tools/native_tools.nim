@@ -1,5 +1,5 @@
 import std/[os, osproc, strutils, httpclient]
-import ../utils, ../approval, ../catalog, opencode
+import ../utils, ../approval, ../catalog, opencode, nvidia
 
 proc execTerminal*(command: string, workingDir: string = "", yoloMode: bool = true): string =
   if command.strip().len == 0:
@@ -213,3 +213,15 @@ proc skillInstallTool*(skillId: string, hermesHome: string): string =
     return "Error: Skill ID cannot be empty."
   let (ok, msg) = installCommunitySkill(skillId, hermesHome)
   return msg
+
+proc nvidiaQueryTool*(model: string, prompt: string): string =
+  if prompt.strip().len == 0:
+    return "Error: Prompt cannot be empty."
+  let targetModel = if model.strip().len == 0: DefaultNvidiaModel else: model.strip()
+  return queryNvidia(targetModel, prompt)
+
+proc nvidiaModelsTool*(): string =
+  let models = listNvidiaModels()
+  if models.len == 0:
+    return "No NVIDIA models detected or NVIDIA_API_KEY not configured."
+  return "Available NVIDIA Build NIM Models (" & $models.len & "):\n" & models.join("\n")

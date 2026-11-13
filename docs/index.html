@@ -385,7 +385,7 @@
     </div>
     <h1>The Autonomous AI Agent<br>Running in <span class="highlight">< 15 MB RAM</span></h1>
     <p>
-      A complete, zero-bloat rewrite of Hermes Agent in <strong>Nim</strong> integrated with <strong>MBVM-DB</strong> (code graph & -93% token slicing), <strong>AI-Rust-Browser</strong> MCP engine, and decentralized <strong>Community Skills Marketplace</strong>. Native compilation, deterministic memory with ORC, and 30 tools in just ~5.8 MB RAM without the Python or Chrome footprint.
+      A complete, zero-bloat rewrite of Hermes Agent in <strong>Nim</strong> integrated with <strong>MBVM-DB</strong> (code graph & -93% token slicing), <strong>AI-Rust-Browser</strong> MCP engine, <strong>NVIDIA Build NIM</strong> (80+ enterprise models), and decentralized <strong>Community Skills Marketplace</strong>. Native compilation, deterministic memory with ORC, and 32 tools in just ~5.8 MB RAM without the Python or Chrome footprint.
     </p>
     <div class="hero-actions">
       <a href="#quickstart" class="btn btn-primary">Get Started</a>
@@ -524,6 +524,14 @@
       </div>
 
       <div class="feature-card">
+        <div class="feature-icon">🟢</div>
+        <h3 class="feature-title">NVIDIA Build NIM (80+ Models)</h3>
+        <p class="feature-desc">
+          Direct access to NVIDIA's high-speed inference cloud: <strong>Meta Llama 3.2 90B Vision</strong>, <strong>Nemotron-3 Reasoning</strong>, Gemma 3, and DeepSeek with native reasoning token support.
+        </p>
+      </div>
+
+      <div class="feature-card">
         <div class="feature-icon">📱</div>
         <h3 class="feature-title">Telegram Bot Gateway</h3>
         <p class="feature-desc">
@@ -559,22 +567,26 @@
 <span class="cmd">.\bin\hermes.exe</span> <span class="flag">--opencode</span> <span class="flag">-p</span> "Explique ponteiros em C em 2 frases"
 <span class="cmd">.\bin\hermes.exe</span> <span class="flag">--list-opencode-models</span>
 
-<span class="comment"># 4. Explore & Install Community Skills (GitOps Marketplace)</span>
+<span class="comment"># 4. Use with NVIDIA Build NIM (80+ Enterprise Models)</span>
+<span class="cmd">.\bin\hermes.exe</span> <span class="flag">--nvidia</span> <span class="flag">-p</span> "Explique a arquitetura Transformer"
+<span class="cmd">.\bin\hermes.exe</span> <span class="flag">--list-nvidia-models</span>
+
+<span class="comment"># 5. Explore & Install Community Skills (GitOps Marketplace)</span>
 <span class="cmd">.\bin\hermes.exe</span> <span class="flag">--list-community-skills</span>
 <span class="cmd">.\bin\hermes.exe</span> <span class="flag">--search-skills</span> docker
 <span class="cmd">.\bin\hermes.exe</span> <span class="flag">--install-skill</span> docker-compose
 
-<span class="comment"># 5. Or configure standard API key (.env)</span>
+<span class="comment"># 6. Or configure standard API key (.env)</span>
 <span class="cmd">echo</span> OPENROUTER_API_KEY=your_key_here > .env
 <span class="cmd">echo</span> HERMES_MODEL=anthropic/claude-3.5-sonnet >> .env
 
-<span class="comment"># 6. Launch interactive CLI REPL</span>
+<span class="comment"># 7. Launch interactive CLI REPL</span>
 <span class="cmd">.\bin\hermes.exe</span>
 
-<span class="comment"># 7. Run as 24/7 Telegram Bot Gateway</span>
+<span class="comment"># 8. Run as 24/7 Telegram Bot Gateway</span>
 <span class="cmd">.\bin\hermes.exe</span> <span class="flag">--telegram</span>
 
-<span class="comment"># 8. One-shot command mode</span>
+<span class="comment"># 9. One-shot command mode</span>
 <span class="cmd">.\bin\hermes.exe</span> <span class="flag">-p</span> "Read package.json and summarize the project"
     </div>
   </section>

@@ -1,5 +1,5 @@
 import std/[strutils, tables]
-import types, utils, memory, agent, skills, cron, sessions, catalog, tools/mbvm_db, tools/opencode
+import types, utils, memory, agent, skills, cron, sessions, catalog, tools/mbvm_db, tools/opencode, tools/nvidia
 
 proc printBanner*(config: AgentConfig) =
   let memMB = getResidentMemoryMB()
@@ -19,6 +19,7 @@ proc printHelp() =
   echo "  " & colorize("/clear", AnsiYellow) & "         - Reset conversation context"
   echo "  " & colorize("/model <name>", AnsiYellow) & "  - Change active LLM model"
   echo "  " & colorize("/opencode [m]", AnsiYellow) & "  - Switch to OpenCode AI model or list models"
+  echo "  " & colorize("/nvidia [m]", AnsiYellow) & "    - Switch to NVIDIA Build NIM model or list models"
   echo "  " & colorize("/memory", AnsiYellow) & "        - View persistent long-term memories"
   echo "  " & colorize("/skills", AnsiYellow) & "        - View loaded skills (or /skills [catalog|search|install])"
   echo "  " & colorize("/sessions", AnsiYellow) & "      - List recent saved conversation sessions"
@@ -190,6 +191,25 @@ proc startRepl*(ag: AIAgent) =
           for m in ms:
             echo "  • " & m
           echo colorize("\nUsage to switch: /opencode <model_name>\n", AnsiDim)
+      of "/nvidia":
+        let key = getNvidiaApiKey()
+        if key.len == 0:
+          echo colorize("⚠️ NVIDIA_API_KEY not configured. Please define it in .env or environment.\n", AnsiRed)
+        elif parts.len >= 2:
+          let target = parts[1]
+          ag.config.baseUrl = getNvidiaBaseUrl()
+          ag.config.apiKey = key
+          ag.config.model = target
+          ag.client.config.baseUrl = ag.config.baseUrl
+          ag.client.config.apiKey = key
+          ag.client.config.model = target
+          echo colorize("✓ Switched to NVIDIA Build NIM Model: ", AnsiGreen) & target & "\n"
+        else:
+          echo colorize("Available NVIDIA Build NIM Enterprise AI Models:", AnsiCyan)
+          let ms = listNvidiaModels()
+          for m in ms:
+            echo "  • " & m
+          echo colorize("\nUsage to switch: /nvidia <model_name> (default: meta/llama-3.2-90b-vision-instruct)\n", AnsiDim)
       else:
         echo colorize("Unknown command: " & cmd & ". Type /help for assistance.\n", AnsiRed)
       continue

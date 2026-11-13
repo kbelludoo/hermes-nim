@@ -474,3 +474,28 @@ proc initDefaultTools*(reg: ToolRegistry) =
     handler: proc(args: JsonNode): string =
       return opencodeModelsTool()
   ))
+
+  # 18. NVIDIA Build NIM Query Tool
+  reg.registerTool(ToolDefinition(
+    name: "nvidia_query",
+    description: "Query enterprise AI models hosted on NVIDIA Build / NIM (e.g. meta/llama-3.2-90b-vision-instruct, nvidia/nemotron-3-nano-omni-30b-a3b-reasoning, deepseek-ai/deepseek-v4.1-flash).",
+    parameters: @[
+      ToolParam(name: "prompt", paramType: "string", description: "The prompt or query to send to the NVIDIA model", required: true),
+      ToolParam(name: "model", paramType: "string", description: "Target NVIDIA model (default 'meta/llama-3.2-90b-vision-instruct')", required: false)
+    ],
+    isPython: false,
+    handler: proc(args: JsonNode): string =
+      let prompt = args.getOrDefault("prompt").getStr("")
+      let model = args.getOrDefault("model").getStr("")
+      return nvidiaQueryTool(model, prompt)
+  ))
+
+  # 19. NVIDIA Build NIM Models List Tool
+  reg.registerTool(ToolDefinition(
+    name: "nvidia_models",
+    description: "List all 80+ AI models available through NVIDIA Build / NIM API.",
+    parameters: @[],
+    isPython: false,
+    handler: proc(args: JsonNode): string =
+      return nvidiaModelsTool()
+  ))

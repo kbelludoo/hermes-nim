@@ -1,5 +1,5 @@
 import std/[parseopt, strutils, os]
-import types, utils, config, agent, cli, sessions, catalog, tools/python_bridge, tools/opencode, gateway/telegram
+import types, utils, config, agent, cli, sessions, catalog, tools/python_bridge, tools/opencode, tools/nvidia, gateway/telegram
 
 proc printUsage() =
   echo """
@@ -17,6 +17,9 @@ Options:
   --opencode                  Use OpenCode headless AI models (Gemini, DeepSeek, etc. without API keys)
   --opencode-model <model>    Select specific OpenCode model (e.g. google/gemini-2.5-flash)
   --list-opencode-models      List all AI models available through local OpenCode
+  --nvidia                    Use NVIDIA Build NIM models (Llama 3.2 90B, Nemotron, DeepSeek, etc.)
+  --nvidia-model <model>      Select specific NVIDIA model (default: meta/llama-3.2-90b-vision-instruct)
+  --list-nvidia-models        List all AI models available through NVIDIA Build / NIM API
   --list-community-skills     List all skills in the decentralized community catalog
   --search-skills <query>     Search for community skills by keyword
   --install-skill <skill_id>  Install a community skill to ~/.hermes/skills/<skill_id>
@@ -44,6 +47,8 @@ proc main() =
   var runTelegram = false
   var listSessionsOnly = false
   var listOpenCodeOnly = false
+  var listNvidiaOnly = false
+  var useNvidiaFlag = false
   var listCommunitySkillsOnly = false
   var searchSkillsQuery = ""
   var installSkillId = ""
@@ -61,7 +66,7 @@ proc main() =
     of cmdShortOption, cmdLongOption:
       let k = p.key.toLowerAscii()
       var v = p.val
-      if v.len == 0 and k notin ["stats", "t", "telegram", "yolo", "list-sessions", "opencode", "list-opencode-models", "list-community-skills", "h", "help"]:
+      if v.len == 0 and k notin ["stats", "t", "telegram", "yolo", "list-sessions", "opencode", "list-opencode-models", "nvidia", "list-nvidia-models", "list-community-skills", "h", "help"]:
         p.next()
         if p.kind == cmdArgument:
           v = p.key
@@ -82,6 +87,13 @@ proc main() =
         modelOverride = v
       of "list-opencode-models":
         listOpenCodeOnly = true
+      of "nvidia":
+        useNvidiaFlag = true
+      of "nvidia-model":
+        useNvidiaFlag = true
+        modelOverride = v
+      of "list-nvidia-models":
+        listNvidiaOnly = true
       of "list-community-skills":
         listCommunitySkillsOnly = true
       of "search-skills":
@@ -125,6 +137,19 @@ proc main() =
     for m in models:
       echo "  • " & m
     quit(0)
+
+  if listNvidiaOnly:
+    echo colorize("Available NVIDIA Build NIM Enterprise AI Models:", AnsiCyan)
+    let models = listNvidiaModels()
+    for m in models:
+      echo "  • " & m
+    quit(0)
+
+  if useNvidiaFlag:
+    if modelOverride.len == 0:
+      modelOverride = DefaultNvidiaModel
+    urlOverride = DefaultNvidiaBaseUrl
+    keyOverride = getNvidiaApiKey()
 
   var cfg = loadConfig(modelOverride, keyOverride, urlOverride, useOpenCode = useOpenCodeFlag)
   if yoloFlag:

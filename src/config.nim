@@ -1,6 +1,6 @@
 import std/[os, strutils, tables, json]
 import types
-import tools/opencode
+import tools/opencode, tools/nvidia
 
 proc getHermesHome*(): string =
   let envHome = getEnv("HERMES_HOME")
@@ -133,8 +133,11 @@ proc loadConfig*(customModel: string = "", customApiKey: string = "", customBase
   # 2. Load from local .env or candidate env files
   let envCandidates = [
     ".env",
+    "C:/Users/kbell/Downloads/nvidia build/.env",
+    getHomeDir() / "Downloads" / "nvidia build" / ".env",
     "agent-go/.env",
     "/home/ubuntu/agent-go/.env",
+    "/home/ubuntu/.hermes/.env",
     "/home/ubuntu/.env"
   ]
   for c in envCandidates:
@@ -146,7 +149,9 @@ proc loadConfig*(customModel: string = "", customApiKey: string = "", customBase
   # 3. Environment variables take highest precedence
   for key in ["OPENAI_API_KEY", "OPENAI_BASE_URL", "OPENROUTER_API_KEY",
               "GEMINI_API_KEY", "GOOGLE_API_KEY", "DEEPSEEK_API_KEY",
-              "GROQ_API_KEY", "MISTRAL_API_KEY", "OLLAMA_BASE_URL", "OPENCODE_MODEL", "HERMES_MODEL", "LLM_MODEL"]:
+              "GROQ_API_KEY", "MISTRAL_API_KEY", "NVIDIA_API_KEY", "NVIDIA_BASE_URL",
+              "NVIDIA_DEFAULT_MODEL", "NVIDIA_MODEL", "OLLAMA_BASE_URL",
+              "OPENCODE_MODEL", "HERMES_MODEL", "LLM_MODEL"]:
     let v = getEnv(key)
     if v.len > 0:
       envTable[key] = v
@@ -157,11 +162,14 @@ proc loadConfig*(customModel: string = "", customApiKey: string = "", customBase
 
   # Determine Provider and BaseURL
   let hasOpenCode = isOpenCodeInstalled()
-  if (useOpenCode or baseUrl == "opencode") or (hasOpenCode and (isOpenCodeModel(model) or (envTable.hasKey("OPENCODE_MODEL") and not envTable.hasKey("MISTRAL_API_KEY") and not envTable.hasKey("OPENAI_API_KEY") and not envTable.hasKey("OPENROUTER_API_KEY")))):
+  if (useOpenCode or baseUrl == "opencode") or (hasOpenCode and (isOpenCodeModel(model) or (envTable.hasKey("OPENCODE_MODEL") and not envTable.hasKey("NVIDIA_API_KEY") and not envTable.hasKey("MISTRAL_API_KEY") and not envTable.hasKey("OPENAI_API_KEY") and not envTable.hasKey("OPENROUTER_API_KEY")))):
     baseUrl = "opencode"
     apiKey = "opencode-local"
     if model.len == 0 or not isOpenCodeModel(model):
       model = envTable.getOrDefault("OPENCODE_MODEL", "google/gemini-2.5-flash")
+  elif isNvidiaModel(model) and envTable.hasKey("NVIDIA_API_KEY"):
+    baseUrl = envTable.getOrDefault("NVIDIA_BASE_URL", DefaultNvidiaBaseUrl)
+    apiKey = envTable["NVIDIA_API_KEY"]
   elif apiKey.len == 0:
     if envTable.hasKey("OPENAI_API_KEY"):
       apiKey = envTable["OPENAI_API_KEY"]
@@ -199,6 +207,12 @@ proc loadConfig*(customModel: string = "", customApiKey: string = "", customBase
         baseUrl = envTable.getOrDefault("MISTRAL_BASE_URL", "https://api.mistral.ai/v1")
       if model.len == 0:
         model = envTable.getOrDefault("MISTRAL_MODEL", envTable.getOrDefault("HERMES_MODEL", "codestral-latest"))
+    elif envTable.hasKey("NVIDIA_API_KEY"):
+      apiKey = envTable["NVIDIA_API_KEY"]
+      if baseUrl.len == 0:
+        baseUrl = envTable.getOrDefault("NVIDIA_BASE_URL", DefaultNvidiaBaseUrl)
+      if model.len == 0:
+        model = envTable.getOrDefault("NVIDIA_DEFAULT_MODEL", envTable.getOrDefault("NVIDIA_MODEL", DefaultNvidiaModel))
     elif envTable.hasKey("OLLAMA_BASE_URL"):
       apiKey = "ollama"
       if baseUrl.len == 0:

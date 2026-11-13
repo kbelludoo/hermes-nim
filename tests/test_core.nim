@@ -1,6 +1,6 @@
 import std/[os, unittest, strutils, json, tables]
 import ../src/types, ../src/utils, ../src/config, ../src/memory, ../src/skills, ../src/cron, ../src/sessions, ../src/catalog
-import ../src/tools/native_tools, ../src/tools/python_bridge, ../src/tools/rust_browser, ../src/tools/mbvm_db, ../src/tools/opencode, ../src/tools/registry
+import ../src/tools/native_tools, ../src/tools/python_bridge, ../src/tools/rust_browser, ../src/tools/mbvm_db, ../src/tools/opencode, ../src/tools/nvidia, ../src/tools/registry
 
 suite "Hermes Nim Full Parity & MBVM-DB Tests":
 
@@ -116,7 +116,7 @@ suite "Hermes Nim Full Parity & MBVM-DB Tests":
 
     let schemas = reg.getOpenAIToolsSchema()
     echo "  [Test] Total Registered Tools: ", schemas.len
-    check schemas.len >= 30 # 9 native + 5 browser + 4 mbvm + 4 skills + 3 cron + 1 subagent + 2 opencode + 2 skills community
+    check schemas.len >= 32 # 9 native + 5 browser + 4 mbvm + 4 skills + 3 cron + 1 subagent + 2 opencode + 2 skills community + 2 nvidia
 
     let memFinal = getResidentMemoryMB()
     echo "  [Test] Final Resident RAM: ", memFinal, " MB"
@@ -158,3 +158,17 @@ suite "Hermes Nim Full Parity & MBVM-DB Tests":
     let resp = queryOpenCode("google/gemini-2.5-flash-lite", "Responda apenas: TEST_OK")
     echo "  [Test] OpenCode Response: ", resp.strip()
     check "TEST_OK" in resp or resp.len > 0
+
+  test "NVIDIA Build NIM API Integration (80+ Enterprise Models)":
+    let key = getNvidiaApiKey()
+    echo "  [Test] NVIDIA API Key found: ", key.len > 0
+    check key.len > 0
+
+    let models = listNvidiaModels()
+    echo "  [Test] NVIDIA Models detected: ", models.len
+    check models.len > 0
+
+    # Test queryNvidia with Llama 3.2 90B
+    let resp = queryNvidia("meta/llama-3.2-90b-vision-instruct", "Responda apenas: NVIDIA_NIM_TEST_OK")
+    echo "  [Test] NVIDIA Response: ", resp.strip()
+    check resp.len > 0
